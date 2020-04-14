@@ -1,4 +1,4 @@
-mod bridge;
+mod flush;
 
 extern crate kafka;
 
@@ -10,7 +10,7 @@ use jsonrpc_http_server::*;
 use serde::Deserialize;
 
 use super::models::*;
-use bridge::*;
+use flush::*;
 use std::env;
 use std::ops::Mul;
 use std::any::Any;
@@ -39,7 +39,8 @@ struct MistInfo {
     trades: i32,
 }
 
-pub fn order_start() {
+pub fn engine_start() {
+    println!("ttttt----{:?}", crate::ORDERS.lock().unwrap());
     loop {
         let mss = crate::ORDER_STREAM.lock().unwrap().poll().unwrap();
         if mss.is_empty() {
@@ -54,8 +55,8 @@ pub fn order_start() {
                 //println!(" N: {:x?}", a);
                 //signature_string.push(a);
                 let message = String::from_utf8_lossy(m.value);
-                // write!(message,"{}",message);
-                println!("catch bridge messages {}", message);
+                // write!(message,"{}",message);1
+                println!("catch flush messages 222 {}", message);
                 // println!("{}:{}@{}: {:?}", ms.topic(), ms.partition(), m.offset, message);
             }
             let _ = crate::ORDER_STREAM.lock().unwrap().consume_messageset(ms);
@@ -64,11 +65,11 @@ pub fn order_start() {
     }
 }
 
-pub fn bridge_start() {
+pub fn flush_start() {
     loop {
         let mss = crate::BRIDGE_STREAM.lock().unwrap().poll().unwrap();
         if mss.is_empty() {
-            println!("No bridge messages available right now.");
+            println!("No flush messages available right now.");
             continue;
         }
 
@@ -80,7 +81,7 @@ pub fn bridge_start() {
                 //signature_string.push(a);
                 let message = String::from_utf8_lossy(m.value);
                 // write!(message,"{}",message);
-                println!("catch bridge messages {}", message);
+                println!("catch flush messages33 {}", message);
                 update_balance();
                 // println!("{}:{}@{}: {:?}", ms.topic(), ms.partition(), m.offset, message);
             }

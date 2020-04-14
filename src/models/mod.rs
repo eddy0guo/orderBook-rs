@@ -8,11 +8,20 @@ use serde::Deserialize;
 use std::ops::Mul;
 
 #[derive(Deserialize, Debug, Default)]
-pub struct tokenInfo {
+pub struct TokenInfo {
     symbol: String,
     name: String,
     address: String,
     decimals: i32,
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub struct EngineOrder {
+    id: String,
+    price: f64,
+    amount: f64,
+    side: String,
+    created_at: String
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -215,3 +224,27 @@ pub fn get_new_address_num() -> i32 {
     num
 }
 
+pub fn list_available_orders() -> Vec<EngineOrder> {
+    let sql = "select id,cast(price as float8),cast(amount as float8),side,cast(created_at as text) from mist_orders where market_id='ASIM-CNYC' and available_amount>0";
+    let mut orders: Vec<EngineOrder> = Vec::new();
+    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
+    if let Err(err) = result {
+        println!("get_active_address_num failed {:?}", err);
+        if !crate::restartDB() {
+            return orders;
+        }
+        result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
+    }
+    let rows = result.unwrap();
+    for row in rows {
+        let info = EngineOrder {
+            id: row.get(0),
+            price : row.get(1),
+            amount: row.get(2),
+            side: row.get(3),
+            created_at: row.get(4),
+        };
+        orders.push(info);
+    }
+    orders
+}

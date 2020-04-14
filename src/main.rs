@@ -38,6 +38,17 @@ lazy_static! {
         consumer_init("orderStream".to_owned()).unwrap()
         //consumer_init("bridgeStream".to_owned()).unwrap()
     });
+    /*
+     static ref trade: Mutex<Consumer> = Mutex::new({
+        consumer_init("orderStream".to_owned()).unwrap()
+        //consumer_init("bridgeStream".to_owned()).unwrap()
+    });
+    */
+
+     static ref ORDERS: Mutex<Vec<models::EngineOrder>> = Mutex::new({
+        models::list_available_orders()
+        //consumer_init("bridgeStream".to_owned()).unwrap()
+    });
 }
 
 pub fn restartDB() -> bool {
@@ -54,25 +65,16 @@ pub fn restartDB() -> bool {
 pub fn restart_kafka(topic: String) -> bool {
     let now = Local::now();
     println!("reconnect {} kafka stream  at {:?}", topic, now);
-    // let client =  connetDB();
-    if topic == "bridge".to_owned() {
-        if let Ok(client) = consumer_init(topic) {
-            *crate::BRIDGE_STREAM.lock().unwrap() = client;
-            return true;
-        }
-        false
-    } else {
-        if let Ok(client) = consumer_init(topic) {
-            *crate::ORDER_STREAM.lock().unwrap() = client;
-            return true;
-        }
-        false
+    if let Ok(client) = consumer_init(topic) {
+        *crate::ORDER_STREAM.lock().unwrap() = client;
+        return true;
     }
+    false
 }
 
 fn connetDB() -> Option<postgres::Client> {
     let mut client;
-    let mut dbname = "dev".to_string();
+    let mut dbname = "product".to_string();
     if let Some(mist_mode) = env::var_os("MIST_MODE") {
         dbname = mist_mode.into_string().unwrap();
     } else {
@@ -108,15 +110,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let rt = tokio::runtime::Runtime::new().unwrap();
     let task1 = async {
-        consume::order_start();
+        consume::engine_start();
     };
     rt.spawn(task1);
 
     let task2 = async {
-        consume::bridge_start();
+        consume::flush_start();
     };
     rt.spawn(task2);
-
     tokio::signal::ctrl_c().await?;
     println!("ctrl-c received!");
     Ok(())
