@@ -14,18 +14,16 @@ pub struct TokenInfo {
     address: String,
     decimals: i32,
 }
-
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize,RustcDecodable, RustcEncodable, Debug, Default,Clone)]
 pub struct EngineOrder {
-    id: String,
-    price: f64,
-    amount: f64,
-    side: String,
+    pub id: String,
+    pub price: f64,
+    pub amount: f64,
+    pub side: String,
     created_at: String
 }
-
 #[derive(Deserialize, Debug, Default)]
-pub struct tradeInfo {
+pub struct TradeInfo {
     id: i32,
     transaction_id: i32,
     transaction_hash: String,
@@ -224,16 +222,22 @@ pub fn get_new_address_num() -> i32 {
     num
 }
 
-pub fn list_available_orders() -> Vec<EngineOrder> {
-    let sql = "select id,cast(price as float8),cast(amount as float8),side,cast(created_at as text) from mist_orders where market_id='ASIM-CNYC' and available_amount>0";
+pub fn list_available_orders(side: &str,channel: &str) -> Vec<EngineOrder> {
+    let mut sort_by = "ASC";
+    if side == "buy" {
+        sort_by = "DESC";
+    }
+    let sql = format!( "select id,cast(price as float8),cast(available_amount as float8),side,cast(created_at as text) from mist_orders_tmp \
+    where market_id='{}' and available_amount>0 and side='{}' order by price {} ,created_at ASC limit 10",channel,side,sort_by);
+    println!("list_available_orders failed333 {}", sql);
     let mut orders: Vec<EngineOrder> = Vec::new();
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
+    let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
     if let Err(err) = result {
         println!("get_active_address_num failed {:?}", err);
         if !crate::restartDB() {
             return orders;
         }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
+        result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
     }
     let rows = result.unwrap();
     for row in rows {
@@ -246,5 +250,6 @@ pub fn list_available_orders() -> Vec<EngineOrder> {
         };
         orders.push(info);
     }
+    println!("list_available_orders 444 {:?}------44", orders);
     orders
 }
