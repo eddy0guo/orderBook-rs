@@ -56,7 +56,7 @@ fn add_available_sell_orders(new_order: EngineOrder) {
     unsafe {
         loop {
             println!("kkk3333---{}--{}", new_order.price, crate::available_sell_orders[index].price);
-            if new_order.price >= crate::available_sell_orders[index].price {
+            if new_order.price <= crate::available_sell_orders[index].price {
                 crate::available_sell_orders.insert(index, new_order);
                 break;
             }
