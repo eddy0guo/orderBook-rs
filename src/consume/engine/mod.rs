@@ -9,6 +9,7 @@ use rustc_serialize::json;
 use crate::util::to_fix;
 use std::rc::Rc;
 use log::__private_api_enabled;
+use std::ptr::null;
 
 
 #[derive(Deserialize, Debug)]
@@ -83,7 +84,8 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
 
                     let mut matched_order = opponents_available_orders[0].clone();
                     matched_order.amount = current_available_amount;
-                    matched_orders.push(matched_order);
+                    matched_orders.push(matched_order.clone());
+                    generate_trade(&taker_order,&matched_order);
                     break;
                 } else {
                     matched_orders.push(opponents_available_orders[0].clone());
@@ -103,9 +105,39 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
     }
     matched_orders
 }
-
-pub fn generate_trade(taker_order: EngineOrder,maker_order: EngineOrder) {
-//todo: 组装撮合结果
+/*
+pub struct TradeInfo {
+    id: i32,
+    transaction_id: i32,
+    transaction_hash: String,
+    status: String,
+    market_id: String,
+    maker: String,
+    taker: String,
+    price: String,
+    amount: String,
+    taker_side: String,
+    maker_order_id: String,
+    taker_order_id: String,
+}
+*/
+pub fn generate_trade(taker_order: & EngineOrder,maker_order: & EngineOrder) {
+    /*
+    let mut trade = TradeInfo {
+        id: NULL,
+        transaction_id: NULL,
+        transaction_hash: NULL,
+        status: "pending".to_string(),
+        market_id: String,
+        maker: String,
+        taker: NULL,
+        price: String,
+        amount: String,
+        taker_side: String,
+        maker_order_id: String,
+        taker_order_id: String,
+    };
+    */
 }
 
 pub fn write_PG() {

@@ -24,26 +24,34 @@ extern crate lazy_static;
 use std::time::Instant;
 use chrono::prelude::*;
 use std::ptr::null;
+use std::sync::mpsc::channel;
 
 static mut available_buy_orders: Vec<models::EngineOrder> = Vec::new();
 static mut available_sell_orders: Vec<models::EngineOrder> = Vec::new();
 static mut trades: Vec<models::TradeInfo> = Vec::new();
-
+static mut market_id: String = String::new();
 
 lazy_static! {
     // let orderTopic = "orderStream".to_owned();
     // let bridgeTopic = "bridgeStream".to_owned();
 
     static ref CLIENTDB: Mutex<postgres::Client> = Mutex::new({
+        println!("lazy_static--postgres");
         connetDB().unwrap()
     });
 
     static ref ORDER_STREAM: Mutex<Consumer> = Mutex::new({
-        consumer_init("MT-CNYC".to_owned()).unwrap()
+        println!("lazy_static--ORDER_STREAM");
+        unsafe{
+                consumer_init(market_id.clone()).unwrap()
+        }
     });
 
      static ref BRIDGE_STREAM: Mutex<Consumer> = Mutex::new({
-        consumer_init("MT-CNYC".to_owned()).unwrap()
+         println!("lazy_static-BRIDGE_STREAM-");
+         unsafe{
+                 consumer_init(market_id.clone()).unwrap()
+         }
         //consumer_init("bridgeStream".to_owned()).unwrap()
     });
 
@@ -109,18 +117,28 @@ fn consumer_init(topic: String) -> Result<Consumer, KafkaError> {
     Ok(con)
 }
 
-fn init(channel: &str) {
+fn init(market: & str) {
     unsafe {
-        available_buy_orders = models::list_available_orders("buy", channel);
-        available_sell_orders = models::list_available_orders("sell", channel);
+        available_buy_orders = models::list_available_orders("buy", market);
+        available_sell_orders = models::list_available_orders("sell", market);
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("main--");
     env_logger::init();
-    let channel = "MT-CNYC";
-    init(channel);
+    for argument in env::args() {
+        if argument.contains("--market_id=") {
+            let market_option:Vec<&str> = argument.as_str().split('=').collect();
+            init(market_option[1].clone());
+            unsafe {
+                market_id = market_option[1].to_string();
+            }
+            println!("You passed --help as one of the arguments!");
+        }
+    }
+    // init("ASIM-CNYC");
     let rt = tokio::runtime::Runtime::new().unwrap();
     let task1 = async {
         consume::engine_start();
