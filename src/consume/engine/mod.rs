@@ -7,6 +7,8 @@ use std::any::Any;
 use crate::models::*;
 use rustc_serialize::json;
 use crate::util::to_fix;
+use std::rc::Rc;
+use log::__private_api_enabled;
 
 
 #[derive(Deserialize, Debug)]
@@ -21,9 +23,14 @@ struct Transfer {
 fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_order: EngineOrder) {
     let mut index = 0;
     unsafe {
+        let mut price_gap = 0.0;
+        if  new_order.side == "buy" {
+            price_gap = new_order.price - partner_available_orders[index].price;
+        }else{
+            price_gap = partner_available_orders[index].price - new_order.price;
+        }
         loop {
-            println!("kkk3333---{}--{}", new_order.price, partner_available_orders[index].price);
-            if new_order.price >= partner_available_orders[index].price {
+            if price_gap >= 0.0 {
                 partner_available_orders.insert(index, new_order);
                 break;
             }
@@ -37,7 +44,6 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
 }
 
 pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
-    // todo：匹配订单
     println!("taker_order = {:?}", taker_order);
     let mut matched_orders: Vec<EngineOrder> = Vec::new();
     unsafe {
@@ -48,12 +54,9 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
             return matched_orders;
         }
         loop {
-            let mut current_sell_amount = crate::available_buy_orders[0].amount.clone();
-            let current_available_amount = to_fix(taker_order.amount - sum_matched, 4);
-            let mut next_available_amount = to_fix(current_available_amount - current_sell_amount, 4);
-            let mut price_gap = 0.0;
             let mut opponents_available_orders = &mut Default::default();
             let mut partner_available_orders = &mut Default::default();
+            let mut price_gap = 0.0;
             if taker_order.side == "sell" {
                 opponents_available_orders = &mut crate::available_buy_orders;
                 partner_available_orders = &mut crate::available_sell_orders;
@@ -63,16 +66,20 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
                 partner_available_orders = &mut crate::available_buy_orders;
                 price_gap = crate::available_sell_orders[0].price - taker_order.price;
             }
+
+            let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
+            let current_available_amount = to_fix(taker_order.amount - sum_matched, 4);
+            let mut next_available_amount = to_fix(current_available_amount - current_opponents_amount, 4);
             if current_available_amount > 0.0 && price_gap <= 0.0 {
                 // println!("kkk000----{}---{}----{}-", current_available_amount, taker_order.price, crate::available_buy_orders[0].price);
                 if next_available_amount > 0.0 {
-                    matched_amount = current_sell_amount;
+                    matched_amount = current_opponents_amount;
                     matched_orders.push(opponents_available_orders[0].clone());
                     opponents_available_orders.remove(0);
                 } else if next_available_amount < 0.0 {
                     matched_amount = current_available_amount;
                     //crate::available_sell_orders[0].amount -= current_available_amount;
-                    opponents_available_orders[0].amount = to_fix(current_sell_amount - current_available_amount, 4);
+                    opponents_available_orders[0].amount = to_fix(current_opponents_amount - current_available_amount, 4);
 
                     let mut matched_order = opponents_available_orders[0].clone();
                     matched_order.amount = current_available_amount;
@@ -97,7 +104,7 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
     matched_orders
 }
 
-pub fn make_trades() {
+pub fn generate_trade(taker_order: EngineOrder,maker_order: EngineOrder) {
 //todo: 组装撮合结果
 }
 

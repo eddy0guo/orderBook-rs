@@ -22,32 +22,6 @@ pub struct EngineOrder {
     pub side: String,
     created_at: String
 }
-/*
-
- id               | text                        |          | not null |
- trade_hash       | text                        |          |          |
- transaction_id   | integer                     |          |          |
- transaction_hash | text                        |          |          |
- status           | text                        |          |          |
- market_id        | text                        |          |          |
- maker            | text                        |          |          |
- taker            | text                        |          |          |
- price            | numeric(32,8)               |          |          |
- amount           | numeric(32,8)               |          |          |
- taker_side       | text                        |          |          |
- maker_order_id   | text                        |          |          |
- taker_order_id   | text                        |          |          |
- updated_at       | timestamp without time zone |          |          |
- created_at       | timestamp without time zone |          |          |
-*/
-#[derive(Deserialize,RustcDecodable, RustcEncodable, Debug, Default,Clone)]
-pub struct EngineTrade {
-    pub id: String,
-    pub price: f64,
-    pub amount: f64,
-    pub side: String,
-    created_at: String
-}
 
 #[derive(Deserialize, Debug, Default)]
 pub struct TradeInfo {
