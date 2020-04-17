@@ -39,6 +39,11 @@ created_at:
 2、计算冻结的逻辑，冻结在下单的时候就进行，而不是sql计算
 
 
+逻辑
+1、消费kafka订单
+2、进行匹配，->产生trade->更新order（落表到redis或者kafka以及推增量数据->
+                      ->另外的线程消费撮合信息，落表到postgresql
+
                 
                  
                   
