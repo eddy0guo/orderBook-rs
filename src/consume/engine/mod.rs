@@ -10,10 +10,13 @@ use crate::util::to_fix;
 use std::rc::Rc;
 use log::__private_api_enabled;
 use std::ptr::null;
+use std::fmt::Write;
+use std::time::Duration;
+use kafka::producer::{Producer, Record, RequiredAcks};
 
 
 #[derive(Deserialize, Debug)]
-struct EngineTrade {
+pub struct EngineTrade {
     taker_order_id: String,
     maker_order_id: String,
     taker_side: String,
@@ -138,7 +141,14 @@ pub fn generate_trade(taker_order: & EngineOrder,maker_order: & EngineOrder) {
             maker_order_id: taker_order2.id,
             taker_order_id: maker_order2.id,
         };
+       crate::trades.push(trade);
     }
+    /*
+    let mut buf = String::with_capacity(2);
+    let _ = write!(&mut buf, "{}", i); // some computation of the message data to be sent
+    producer.send(&Record::from_value("my-topic", buf.as_bytes())).unwrap();
+    buf.clear();
+    */
 }
 
 pub fn write_PG() {

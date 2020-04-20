@@ -7,7 +7,6 @@ extern crate env_logger;
 extern crate rustc_serialize;
 
 
-use std::fmt::Write;
 use std::io::BufReader;
 use kafka::consumer::{Consumer, FetchOffset, GroupOffsetStorage};
 use kafka::error::Error as KafkaError;
@@ -25,11 +24,15 @@ use std::time::Instant;
 use chrono::prelude::*;
 use std::ptr::null;
 use std::sync::mpsc::channel;
+use std::fmt::Write;
+use std::time::Duration;
+use kafka::producer::{Producer, Record, RequiredAcks};
 
 static mut available_buy_orders: Vec<models::EngineOrder> = Vec::new();
 static mut available_sell_orders: Vec<models::EngineOrder> = Vec::new();
-static mut trades: Vec<models::TradeInfo> = Vec::new();
+static mut trades: Vec<consume::engine::EngineTrade> = Vec::new();
 static mut market_id: String = String::new();
+static kafka_server: &str = "localhost:9092";
 
 lazy_static! {
     // let orderTopic = "orderStream".to_owned();
@@ -40,27 +43,24 @@ lazy_static! {
         connetDB().unwrap()
     });
 
-    static ref ORDER_STREAM: Mutex<Consumer> = Mutex::new({
-        println!("lazy_static--ORDER_STREAM");
+    static ref ORDER_CONSUMER: Mutex<Consumer> = Mutex::new({
+        println!("lazy_static--ORDER_CONSUMER");
         unsafe{
                 consumer_init(market_id.clone()).unwrap()
         }
     });
 
-     static ref BRIDGE_STREAM: Mutex<Consumer> = Mutex::new({
-         println!("lazy_static-BRIDGE_STREAM-");
+     static ref TRADE_CONSUMER: Mutex<Consumer> = Mutex::new({
+         println!("lazy_static-CONSUMER-");
          unsafe{
                  consumer_init(market_id.clone()).unwrap()
          }
-        //consumer_init("bridgeStream".to_owned()).unwrap()
-    });
+     });
 
-     /*
-     static ref ORDERS: Mutex<Vec<models::EngineOrder>> = Mutex::new({
-        models::list_available_orders()
-        //consumer_init("bridgeStream".to_owned()).unwrap()
+     static ref TRADE_PRODUCER: Mutex<Producer> = Mutex::new({
+         println!("lazy_static-TRADE_PRODUCER-");
+         producer_init().unwrap()
     });
-    */
 }
 
 pub fn restartDB() -> bool {
@@ -78,7 +78,7 @@ pub fn restart_kafka(topic: String) -> bool {
     let now = Local::now();
     println!("reconnect {} kafka stream  at {:?}", topic, now);
     if let Ok(client) = consumer_init(topic) {
-        *crate::ORDER_STREAM.lock().unwrap() = client;
+        *crate::ORDER_CONSUMER.lock().unwrap() = client;
         return true;
     }
     false
@@ -106,7 +106,7 @@ fn connetDB() -> Option<postgres::Client> {
 
 fn consumer_init(topic: String) -> Result<Consumer, KafkaError> {
 //fn  order_consumer_init() -> Result<(), KafkaError> {
-    let brokers = vec!["localhost:9092".to_owned()];
+    let brokers = vec![kafka_server.to_owned()];
     let group = "mist".to_owned();
     let con = Consumer::from_hosts(brokers)
         .with_topic(topic)
@@ -117,7 +117,17 @@ fn consumer_init(topic: String) -> Result<Consumer, KafkaError> {
     Ok(con)
 }
 
-fn init(market: & str) {
+fn producer_init() -> Result<Producer, KafkaError> {
+    let mut producer =
+        Producer::from_hosts(vec!(kafka_server.to_owned()))
+            .with_ack_timeout(Duration::from_secs(1))
+            .with_required_acks(RequiredAcks::One)
+            .create()
+            .unwrap();
+    Ok(producer)
+}
+
+fn init(market: &str) {
     unsafe {
         available_buy_orders = models::list_available_orders("buy", market);
         available_sell_orders = models::list_available_orders("sell", market);
@@ -130,7 +140,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     for argument in env::args() {
         if argument.contains("--market_id=") {
-            let market_option:Vec<&str> = argument.as_str().split('=').collect();
+            let market_option: Vec<&str> = argument.as_str().split('=').collect();
             init(market_option[1].clone());
             unsafe {
                 market_id = market_option[1].to_string();
@@ -138,6 +148,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("You passed --help as one of the arguments!");
         }
     }
+
+
+
+
+    let mut producer =
+        Producer::from_hosts(vec!("localhost:9092".to_owned()))
+            .with_ack_timeout(Duration::from_secs(1))
+            .with_required_acks(RequiredAcks::One)
+            .create()
+            .unwrap();
+
+    let mut buf = String::with_capacity(2);
+    for i in 0..10 {
+        let _ = write!(&mut buf, "{}", i); // some computation of the message data to be sent
+        producer.send(&Record::from_value("my-topic", buf.as_bytes())).unwrap();
+        buf.clear();
+    }
+
     // init("ASIM-CNYC");
     let rt = tokio::runtime::Runtime::new().unwrap();
     let task1 = async {
@@ -146,7 +174,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     rt.spawn(task1);
 
     let task2 = async {
-        //consume::flush_start();
+        consume::flush_start();
         println!("ctrl-c received22!");
     };
     rt.spawn(task2);

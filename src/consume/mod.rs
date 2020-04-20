@@ -1,5 +1,5 @@
 mod flush;
-mod engine;
+pub(crate) mod engine;
 extern crate kafka;
 
 use std::cmp::Ord;
@@ -16,6 +16,7 @@ use std::ops::Mul;
 use std::any::Any;
 use kafka::consumer::{Consumer, FetchOffset, GroupOffsetStorage};
 use kafka::error::Error as KafkaError;
+use crate::trades;
 
 
 #[derive(Deserialize, Debug)]
@@ -41,7 +42,7 @@ struct MistInfo {
 
 pub fn engine_start() {
     loop {
-        let mut mss = crate::ORDER_STREAM.lock().unwrap().poll().unwrap();
+        let mut mss = crate::ORDER_CONSUMER.lock().unwrap().poll().unwrap();
         if mss.is_empty() {
             // println!("No order messages available right now.");
             continue;
@@ -76,7 +77,7 @@ pub fn engine_start() {
                 // println!("{}:{}@{}: {:?}", ms.topic(), ms.partition(), m.offset, message);
             }
             println!("matched1 ---111");
-            let _ = crate::ORDER_STREAM.lock().unwrap().consume_messageset(ms);
+            let _ = crate::ORDER_CONSUMER.lock().unwrap().consume_messageset(ms);
             println!("matched2 ---222");
 
         }
@@ -85,14 +86,27 @@ pub fn engine_start() {
                      crate::available_buy_orders.len(),crate::available_sell_orders.len(),crate::available_buy_orders,
                      crate::available_sell_orders);
         }
-        crate::ORDER_STREAM.lock().unwrap().commit_consumed();
+        crate::ORDER_CONSUMER.lock().unwrap().commit_consumed();
         println!("matched3 ---333");
     }
 }
 
 pub fn flush_start() {
     loop {
-        let mss = crate::BRIDGE_STREAM.lock().unwrap().poll().unwrap();
+        unsafe {
+            if  crate::trades.len() > 0{
+                println!("get an engine trade {:?}", crate::trades);
+                trades.pop();
+                continue;
+            }
+            println!("have no engine trade {:?}", crate::trades);
+            std::thread::sleep(std::time::Duration::new(5,0));
+        }
+    }
+
+    /*
+    loop {
+        let mss = crate::TRADE_PRODUCER.lock().unwrap().poll().unwrap();
         if mss.is_empty() {
             println!("No flush messages available right now.");
             continue;
@@ -110,8 +124,9 @@ pub fn flush_start() {
                // update_balance();
                 // println!("{}:{}@{}: {:?}", ms.topic(), ms.partition(), m.offset, message);
             }
-            let _ = crate::BRIDGE_STREAM.lock().unwrap().consume_messageset(ms);
+            let _ = crate::TRADE_PRODUCER.lock().unwrap().consume_messageset(ms);
         }
-        crate::BRIDGE_STREAM.lock().unwrap().commit_consumed();
+        crate::TRADE_PRODUCER.lock().unwrap().commit_consumed();
     }
+    */
 }
