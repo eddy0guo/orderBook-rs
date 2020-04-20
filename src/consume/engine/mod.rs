@@ -13,13 +13,15 @@ use std::ptr::null;
 
 
 #[derive(Deserialize, Debug)]
-struct Transfer {
-    private_key: String,
-    fromaccount: String,
-    toaccount: String,
+struct EngineTrade {
+    taker_order_id: String,
+    maker_order_id: String,
+    taker_side: String,
     amount: f64,
-    token: String,
+    price: f64,
+    market_id: String
 }
+
 
 fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_order: EngineOrder) {
     let mut index = 0;
@@ -77,6 +79,7 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
                     matched_amount = current_opponents_amount;
                     matched_orders.push(opponents_available_orders[0].clone());
                     opponents_available_orders.remove(0);
+                    generate_trade(&taker_order,&opponents_available_orders[0]);
                 } else if next_available_amount < 0.0 {
                     matched_amount = current_available_amount;
                     //crate::available_sell_orders[0].amount -= current_available_amount;
@@ -85,16 +88,17 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
                     let mut matched_order = opponents_available_orders[0].clone();
                     matched_order.amount = current_available_amount;
                     matched_orders.push(matched_order.clone());
-                    generate_trade(&taker_order,&matched_order);
+                    generate_trade(&taker_order,&opponents_available_orders[0]);
                     break;
                 } else {
                     matched_orders.push(opponents_available_orders[0].clone());
                     opponents_available_orders.remove(0);
+                    generate_trade(&taker_order,&opponents_available_orders[0]);
                     break;
                 }
             } else if current_available_amount > 0.0 && price_gap > 0.0 {
                 taker_order.amount = current_available_amount;
-                println!("kkk2222---{:?}---{}-", taker_order, current_available_amount);
+                // println!("kkk2222---{:?}---{}-", taker_order, current_available_amount);
                 add_available_orders(partner_available_orders, taker_order);
                 break;
             } else {
@@ -122,22 +126,19 @@ pub struct TradeInfo {
 }
 */
 pub fn generate_trade(taker_order: & EngineOrder,maker_order: & EngineOrder) {
-    /*
-    let mut trade = TradeInfo {
-        id: NULL,
-        transaction_id: NULL,
-        transaction_hash: NULL,
-        status: "pending".to_string(),
-        market_id: String,
-        maker: String,
-        taker: NULL,
-        price: String,
-        amount: String,
-        taker_side: String,
-        maker_order_id: String,
-        taker_order_id: String,
-    };
-    */
+    let taker_order2 = taker_order.clone();
+    let maker_order2 = maker_order.clone();
+
+    unsafe {
+        let mut trade = EngineTrade {
+            market_id: crate::market_id.clone(),
+            price: maker_order2.price,
+            amount: maker_order2.amount,
+            taker_side: taker_order2.side,
+            maker_order_id: taker_order2.id,
+            taker_order_id: maker_order2.id,
+        };
+    }
 }
 
 pub fn write_PG() {

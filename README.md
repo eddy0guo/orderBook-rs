@@ -42,7 +42,7 @@ created_at:
 逻辑
 1、消费kafka订单
 2、进行匹配，->产生trade->更新order（落表到redis或者kafka以及推增量数据->
-                      ->另外的线程消费撮合信息，落表到postgresql
+                      ->另外的线程消费撮合信息，落表到postgresql,更新order和插入trade
 
                 
                  
