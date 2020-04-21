@@ -136,35 +136,26 @@ pub fn insert_trade(trade: &TradeInfo){
         markets.push(info);
     }
 }
-
+*/
 pub fn update_order(order: &UpdateOrder) {
-    /*
-          const [err, result]: [any, any] = await to(this.clientDB
-            .query('UPDATE mist_orders SET (available_amount,confirmed_amount,canceled_amount,\
-                pending_amount,status,updated_at)=\
-                (available_amount+$1,confirmed_amount+$2,canceled_amount+$3,pending_amount+$4,$5,$6) WHERE id=$7', update_info));
-
-    */
     // fixme:注入的写法暂时有问题，先直接拼接
-    let sql = format!("UPDATE mist_orders SET (available_amount,confirmed_amount,canceled_amount,pending_amount,status,updated_at)=\
-                (available_amount+{},confirmed_amount+{},canceled_amount+{},pending_amount+{},{},{}) WHERE id=$7",
-                );
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[&order]);
+    let sql =
+        format!("UPDATE mist_orders2 SET (available_amount,confirmed_amount,canceled_amount,pending_amount,status,updated_at)=\
+                ({},confirmed_amount,canceled_amount,{},'{}','{}') WHERE id='{}'",
+                order.available_amount, order.pending_amount, order.status, order.updated_at, order.id);
+    println!("--{}-",sql);
+    let mut result = crate::CLIENTDB.lock().unwrap().execute(&*sql, &[]);
     if let Err(err) = result {
-        println!("get_marketID_volume failed {:?}", err);
+        println!("update_order failed {:?} {}", err,sql);
         if !crate::restartDB() {
             return;
         }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[&order]);
+        result = crate::CLIENTDB.lock().unwrap().execute(&*sql, &[]);
     }
-    let rows = result.unwrap();
-    let x: Option<f64> = rows[0].get(0);
-    if x == None {
-        println!("{:?} have no trade within 24 hours", order);
-        return;
-    }
+    println!("success update {} rows", result.unwrap());
+    return;
 }
-*/
+
 pub fn get_order(id: &str) -> UpdateOrder {
     let sql = "select id,trader_address,status,\
              cast(amount as float8),\
@@ -173,7 +164,7 @@ pub fn get_order(id: &str) -> UpdateOrder {
             cast(canceled_amount as float8),\
             cast(pending_amount as float8),\
             cast(updated_at as text) \
-            from mist_orders_tmp2 where id=$1";
+            from mist_orders2 where id=$1";
     let mut order: UpdateOrder = Default::default();
     let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[&id]);
     if let Err(err) = result {
@@ -204,7 +195,7 @@ pub fn list_available_orders(side: &str, channel: &str) -> Vec<EngineOrder> {
     if side == "buy" {
         sort_by = "DESC";
     }
-    let sql = format!("select id,cast(price as float8),cast(available_amount as float8),side,cast(created_at as text) from mist_orders_tmp2 \
+    let sql = format!("select id,cast(price as float8),cast(available_amount as float8),side,cast(created_at as text) from mist_orders2 \
     where market_id='{}' and available_amount>0 and side='{}' order by price {} ,created_at ASC limit 10", channel, side, sort_by);
     println!("list_available_orders failed333 {}", sql);
     let mut orders: Vec<EngineOrder> = Vec::new();

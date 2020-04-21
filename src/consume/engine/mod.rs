@@ -83,47 +83,55 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
             }
 
             println!("add_available_orders0000 = {:?}", partner_available_orders);
+            println!("add_available_orders0000-aaa = {:?}", opponents_available_orders);
             if opponents_available_orders.len() == 0 {
                 add_available_orders(partner_available_orders, taker_order.clone());
                 println!("add_available_orders444 = {:?}", partner_available_orders);
                 return matched_orders;
             }
             println!("add_available_orders5555 = {:?}", partner_available_orders);
+            println!("add_available_orders5555--aaa = {:?}", opponents_available_orders);
+
 
             let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
             let current_available_amount = to_fix(taker_order.amount - sum_matched, 4);
             let mut next_available_amount = to_fix(current_available_amount - current_opponents_amount, 4);
             if current_available_amount > 0.0 && price_gap <= 0.0 {
+                println!("add_available_orders5555--bbb = {:?}", opponents_available_orders);
                 // println!("kkk000----{}---{}----{}-", current_available_amount, taker_order.price, crate::available_buy_orders[0].price);
                 if next_available_amount > 0.0 {
+                    println!("add_available_orders5555--ccc = {:?}", opponents_available_orders);
                     matched_amount = current_opponents_amount;
                     matched_orders.push(opponents_available_orders[0].clone());
-                    opponents_available_orders.remove(0);
                     generate_trade(&taker_order,&opponents_available_orders[0]);
+                    opponents_available_orders.remove(0);
                 } else if next_available_amount < 0.0 {
+                    println!("add_available_orders5555--ddd = {:?}", opponents_available_orders);
                     matched_amount = current_available_amount;
                     //crate::available_sell_orders[0].amount -= current_available_amount;
                     opponents_available_orders[0].amount = to_fix(current_opponents_amount - current_available_amount, 4);
-
                     let mut matched_order = opponents_available_orders[0].clone();
                     matched_order.amount = current_available_amount;
                     matched_orders.push(matched_order.clone());
                     generate_trade(&taker_order,&opponents_available_orders[0]);
                     break;
                 } else {
+                    println!("add_available_orders5555--eee = {:?}", opponents_available_orders);
                     matched_orders.push(opponents_available_orders[0].clone());
-                    opponents_available_orders.remove(0);
                     generate_trade(&taker_order,&opponents_available_orders[0]);
+                    opponents_available_orders.remove(0);
                     break;
                 }
             } else if current_available_amount > 0.0 && price_gap > 0.0 {
                 taker_order.amount = current_available_amount;
                 // println!("kkk2222---{:?}---{}-", taker_order, current_available_amount);
                 add_available_orders(partner_available_orders, taker_order);
+                println!("add_available_orders5555--yyy = {:?}", opponents_available_orders);
                 break;
             } else {
                 break;
             }
+            println!("add_available_orders5555--zzz = {:?}", opponents_available_orders);
             sum_matched = to_fix(sum_matched + matched_amount, 4);
         }
     }

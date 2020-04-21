@@ -16,30 +16,23 @@ use kafka::error::Error as KafkaError;
 
 
 //  "pending","partial_filled","cancled","full_filled" or ""
-pub fn update_order(order:&mut UpdateOrder,engine_trade:&EngineTrade) -> bool {
+pub fn update_order(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool {
     // todo:更新redis余额
-    if engine_trade.taker_side == "buy" {
-        order.available_amount =  to_fix(order.available_amount - engine_trade.amount,4);
-        order.pending_amount = to_fix(order.pending_amount + engine_trade.amount,4);
-        order.updated_at = get_current_time();
-        if  order.available_amount > 0.0 && order.available_amount < order.amount{
-            order.status = "partial_filled".to_string();
-        }else if  order.available_amount == order.amount{
-            order.status = "pending".to_string();
-        }else {
-            println!("Other circumstances that were not considered, or should not have occurred");
-        }
-        // println!("---sys_time----{}--4",dt_str);
-        //order.updated_at =
-        //super::models::update_order(order);
-    }else {
-        // println!("----sys_time---{}--4",dt_str);
+    order.available_amount = to_fix(order.available_amount - engine_trade.amount, 4);
+    order.pending_amount = to_fix(order.pending_amount + engine_trade.amount, 4);
+    order.updated_at = get_current_time();
+    if order.available_amount > 0.0 && order.available_amount < order.amount {
+        order.status = "partial_filled".to_string();
+    } else if order.available_amount == 0.0 {
+        order.status = "full_filled".to_string();
+    } else {
+        println!("Other circumstances that were not considered, or should not have occurred");
     }
-
+    crate::models::update_order(order);
     true
 }
 
-pub fn insert_trade(taker_order:&EngineOrder,maker_order:&EngineOrder,engine_trade:&Vec<EngineTrade>) -> bool {
+pub fn insert_trade(taker_order: &EngineOrder, maker_order: &EngineOrder, engine_trade: &Vec<EngineTrade>) -> bool {
     // todo:更新redis余额
     true
 }

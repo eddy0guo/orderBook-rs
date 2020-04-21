@@ -95,11 +95,6 @@ pub fn flush_start() {
                     println!("get an engine trade {:?}", trade);
                     // todo:update order
                     // todo:insert trade
-                    //created_at: time::Duration::from_secs(now.now()),
-                    // let dt: DateTime<Utc> = Utc::now();       // e.g. `2014-11-28T12:45:59.324310806Z`
-
-                    println!("00-----------------===={}---", get_current_time());
-
                     let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
                     println!("3333----{:?}{:?}---33", taker_order, maker_order);
