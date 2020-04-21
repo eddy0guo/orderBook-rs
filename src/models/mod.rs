@@ -173,7 +173,7 @@ pub fn get_order(id: &str) -> UpdateOrder {
             cast(canceled_amount as float8),\
             cast(pending_amount as float8),\
             cast(updated_at as text) \
-            from mist_orders_tmp where id=$1";
+            from mist_orders_tmp2 where id=$1";
     let mut order: UpdateOrder = Default::default();
     let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[&id]);
     if let Err(err) = result {
@@ -204,7 +204,7 @@ pub fn list_available_orders(side: &str, channel: &str) -> Vec<EngineOrder> {
     if side == "buy" {
         sort_by = "DESC";
     }
-    let sql = format!("select id,cast(price as float8),cast(available_amount as float8),side,cast(created_at as text) from mist_orders_tmp \
+    let sql = format!("select id,cast(price as float8),cast(available_amount as float8),side,cast(created_at as text) from mist_orders_tmp2 \
     where market_id='{}' and available_amount>0 and side='{}' order by price {} ,created_at ASC limit 10", channel, side, sort_by);
     println!("list_available_orders failed333 {}", sql);
     let mut orders: Vec<EngineOrder> = Vec::new();

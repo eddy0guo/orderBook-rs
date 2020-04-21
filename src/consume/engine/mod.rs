@@ -29,7 +29,15 @@ pub struct EngineTrade {
 fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_order: EngineOrder) {
     let mut index = 0;
     unsafe {
+        println!("add_available_orders = {:?}", partner_available_orders);
         let mut price_gap = 0.0;
+        if  partner_available_orders.len() == 0{
+            partner_available_orders.push(new_order);
+            println!("add_available_orders 2222= {:?}", partner_available_orders);
+
+            return;
+        }
+        println!("add_available_orders333 = {:?}", partner_available_orders);
         if  new_order.side == "buy" {
             price_gap = new_order.price - partner_available_orders[index].price;
         }else{
@@ -56,9 +64,6 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
         let mut sum_matched: f64 = 0.0;
         let mut matched_amount: f64 = 0.0;
         let mut index = 0;
-        if crate::available_buy_orders.len() == 0 || crate::available_sell_orders.len() == 0 {
-            return matched_orders;
-        }
         loop {
             let mut opponents_available_orders = &mut Default::default();
             let mut partner_available_orders = &mut Default::default();
@@ -66,12 +71,24 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
             if taker_order.side == "sell" {
                 opponents_available_orders = &mut crate::available_buy_orders;
                 partner_available_orders = &mut crate::available_sell_orders;
-                price_gap = taker_order.price - opponents_available_orders[0].price;
+                if  opponents_available_orders.len() != 0{
+                    price_gap = taker_order.price - opponents_available_orders[0].price;
+                }
             } else {
                 opponents_available_orders = &mut crate::available_sell_orders;
                 partner_available_orders = &mut crate::available_buy_orders;
-                price_gap = crate::available_sell_orders[0].price - taker_order.price;
+                if  opponents_available_orders.len() != 0 {
+                    price_gap = opponents_available_orders[0].price - taker_order.price;
+                }
             }
+
+            println!("add_available_orders0000 = {:?}", partner_available_orders);
+            if opponents_available_orders.len() == 0 {
+                add_available_orders(partner_available_orders, taker_order.clone());
+                println!("add_available_orders444 = {:?}", partner_available_orders);
+                return matched_orders;
+            }
+            println!("add_available_orders5555 = {:?}", partner_available_orders);
 
             let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
             let current_available_amount = to_fix(taker_order.amount - sum_matched, 4);

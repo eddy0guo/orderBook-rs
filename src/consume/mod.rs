@@ -1,5 +1,6 @@
 mod flush;
 pub(crate) mod engine;
+
 extern crate kafka;
 
 use std::cmp::Ord;
@@ -49,6 +50,12 @@ pub fn engine_start() {
             // println!("No order messages available right now.");
             continue;
         }
+        unsafe {
+            println!("available buy order len {},available sell order len {},--BUY-{:?},--------SELL{:?}",
+                     crate::available_buy_orders.len(), crate::available_sell_orders.len(),
+                     crate::available_buy_orders, crate::available_sell_orders);
+        }
+
         for ms in mss.iter() {
             for m in ms.messages() {
                 println!("matched ----555");
@@ -60,15 +67,20 @@ pub fn engine_start() {
                 } else {
                     println!("this is not a erc20 transfer");
                 }
-                decoded_message.price = to_fix(decoded_message.price,4);
-                decoded_message.amount = to_fix(decoded_message.amount,4);
-               // println!("new order {:?},---{}--{}",decoded_message,message,to_fix(decoded_message.amount,4));
+                decoded_message.price = to_fix(decoded_message.price, 4);
+                decoded_message.amount = to_fix(decoded_message.amount, 4);
+                // println!("new order {:?},---{}--{}",decoded_message,message,to_fix(decoded_message.amount,4));
                 // todo:checkout available amount
                 let orders = engine::matched(decoded_message);
-                println!("matched {:?}",orders);
+                println!("matched {:?}", orders);
                 // println!("{}:{}@{}: {:?}", ms.topic(), ms.partition(), m.offset, message);
             }
             let _ = crate::ORDER_CONSUMER.lock().unwrap().consume_messageset(ms);
+        }
+        unsafe {
+            println!("available buy order len {},available sell order len {},--BUY-{:?},--------SELL{:?}",
+                     crate::available_buy_orders.len(), crate::available_sell_orders.len(),
+                     crate::available_buy_orders, crate::available_sell_orders);
         }
         crate::ORDER_CONSUMER.lock().unwrap().commit_consumed();
     }
@@ -77,30 +89,30 @@ pub fn engine_start() {
 pub fn flush_start() {
     loop {
         unsafe {
-            if  crate::trades.len() > 0{
+            if crate::trades.len() > 0 {
                 let pending_trades = &crate::trades;
                 for trade in pending_trades {
                     println!("get an engine trade {:?}", trade);
                     // todo:update order
                     // todo:insert trade
-                        //created_at: time::Duration::from_secs(now.now()),
-                        // let dt: DateTime<Utc> = Utc::now();       // e.g. `2014-11-28T12:45:59.324310806Z`
+                    //created_at: time::Duration::from_secs(now.now()),
+                    // let dt: DateTime<Utc> = Utc::now();       // e.g. `2014-11-28T12:45:59.324310806Z`
 
-                        println!("00-----------------===={}---",get_current_time());
+                    println!("00-----------------===={}---", get_current_time());
 
                     let mut taker_order = crate::models::get_order(&trade.taker_order_id);
-                    let  mut maker_order = crate::models::get_order(&trade.maker_order_id);
-                    println!("3333----{:?}{:?}---33",taker_order,maker_order);
-                    flush::update_order(& mut taker_order,&trade);
-                    flush::update_order(& mut maker_order,&trade);
+                    let mut maker_order = crate::models::get_order(&trade.maker_order_id);
+                    println!("3333----{:?}{:?}---33", taker_order, maker_order);
+                    flush::update_order(&mut taker_order, &trade);
+                    flush::update_order(&mut maker_order, &trade);
 
                     trades.pop();
                 }
-               // flush::insert_trade(&taker_order,&maker_order,pending_trades);
+                // flush::insert_trade(&taker_order,&maker_order,pending_trades);
                 continue;
             }
             println!("have no engine trade {:?}", crate::trades);
-            std::thread::sleep(std::time::Duration::new(5,0));
+            std::thread::sleep(std::time::Duration::new(5, 0));
         }
     }
 }
