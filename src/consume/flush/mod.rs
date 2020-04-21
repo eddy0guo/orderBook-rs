@@ -14,14 +14,14 @@ use std::ops::Mul;
 use std::any::Any;
 use kafka::error::Error as KafkaError;
 
+
 //  "pending","partial_filled","cancled","full_filled" or ""
 pub fn update_order(order:&mut UpdateOrder,engine_trade:&EngineTrade) -> bool {
-    //created_at: time::Duration::from_secs(now.now()),
-    let sys_time = SystemTime::now();
     // todo:更新redis余额
     if engine_trade.taker_side == "buy" {
         order.available_amount =  to_fix(order.available_amount - engine_trade.amount,4);
         order.pending_amount = to_fix(order.pending_amount + engine_trade.amount,4);
+        order.updated_at = get_current_time();
         if  order.available_amount > 0.0 && order.available_amount < order.amount{
             order.status = "partial_filled".to_string();
         }else if  order.available_amount == order.amount{
@@ -29,11 +29,11 @@ pub fn update_order(order:&mut UpdateOrder,engine_trade:&EngineTrade) -> bool {
         }else {
             println!("Other circumstances that were not considered, or should not have occurred");
         }
-        println!("---sys_time----{:?}--4",sys_time.to_owned());
+        // println!("---sys_time----{}--4",dt_str);
         //order.updated_at =
         //super::models::update_order(order);
     }else {
-        println!("----sys_time---{:?}--4",sys_time.to_owned());
+        // println!("----sys_time---{}--4",dt_str);
     }
 
     true
