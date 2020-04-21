@@ -17,12 +17,12 @@ use kafka::producer::{Producer, Record, RequiredAcks};
 
 #[derive(Deserialize, Debug)]
 pub struct EngineTrade {
-    taker_order_id: String,
-    maker_order_id: String,
-    taker_side: String,
-    amount: f64,
-    price: f64,
-    market_id: String
+    pub taker_order_id: String,
+    pub maker_order_id: String,
+    pub taker_side: String,
+    pub amount: f64,
+    pub price: f64,
+    pub market_id: String
 }
 
 
@@ -112,22 +112,7 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
     }
     matched_orders
 }
-/*
-pub struct TradeInfo {
-    id: i32,
-    transaction_id: i32,
-    transaction_hash: String,
-    status: String,
-    market_id: String,
-    maker: String,
-    taker: String,
-    price: String,
-    amount: String,
-    taker_side: String,
-    maker_order_id: String,
-    taker_order_id: String,
-}
-*/
+
 pub fn generate_trade(taker_order: & EngineOrder,maker_order: & EngineOrder) {
     let taker_order2 = taker_order.clone();
     let maker_order2 = maker_order.clone();
@@ -143,15 +128,5 @@ pub fn generate_trade(taker_order: & EngineOrder,maker_order: & EngineOrder) {
         };
        crate::trades.push(trade);
     }
-    /*
-    let mut buf = String::with_capacity(2);
-    let _ = write!(&mut buf, "{}", i); // some computation of the message data to be sent
-    producer.send(&Record::from_value("my-topic", buf.as_bytes())).unwrap();
-    buf.clear();
-    */
-}
-
-pub fn write_PG() {
-//todo：撮合结果落表，插入trades，更新orders
 }
 

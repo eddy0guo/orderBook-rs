@@ -6,25 +6,46 @@ use rustc_serialize::json;
 
 use serde::Deserialize;
 use std::ops::Mul;
+/*
+ id               | text                        |          | not null |
+ trader_address   | text                        |          |          |
+ market_id        | text                        |          |          |
+ side             | text                        |          |          |
+ price            | numeric(32,8)               |          |          |
+ amount           | numeric(32,8)               |          |          |
+ status           | text                        |          |          |
+ type             | text                        |          |          |
+ available_amount | numeric(32,8)               |          |          |
+ confirmed_amount | numeric(32,8)               |          |          |
+ canceled_amount  | numeric(32,8)               |          |          |
+ pending_amount   | numeric(32,8)               |          |          |
+ updated_at       | timestamp without time zone |          |          |
+ created_at       | timestamp without time zone |          |          |
+ signature        | text                        |          |          |
+ expire_at        | bigint                      |          |          |
+*/
 
 #[derive(Deserialize, Debug, Default)]
-pub struct TokenInfo {
-    symbol: String,
-    name: String,
-    address: String,
-    decimals: i32,
+pub struct UpdateOrder {
+    pub id: String,
+    pub trader_address: String,
+    pub status: String,
+    pub amount: f64,
+    pub available_amount: f64,
+    pub confirmed_amount: f64,
+    pub canceled_amount: f64,
+    pub pending_amount: f64,
+    pub updated_at: String,
 }
-#[derive(Deserialize,RustcDecodable, RustcEncodable, Debug, Default,Clone)]
+
+#[derive(Deserialize, RustcDecodable, RustcEncodable, Debug, Default, Clone)]
 pub struct EngineOrder {
     pub id: String,
     pub price: f64,
     pub amount: f64,
     pub side: String,
-    created_at: String
+    created_at: String,
 }
-
-
-
 
 #[derive(Deserialize, Debug, Default)]
 pub struct TradeInfo {
@@ -40,15 +61,6 @@ pub struct TradeInfo {
     taker_side: String,
     maker_order_id: String,
     taker_order_id: String,
-}
-
-#[derive(Deserialize, Debug, Default)]
-pub struct MarketInfo {
-    pub id: String,
-    base_token_address: String,
-    base_token_symbol: String,
-    quote_token_address: String,
-    quote_token_symbol: String,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -103,15 +115,15 @@ pub fn get_current_price_marketID(id: &str) -> f64 {
     }
     price
 }
-
-pub fn list_marketID_volume() -> Vec<MarketVolume> {
+/*
+pub fn insert_trade(trade: &TradeInfo){
     let sql = "select market_id,cast(sum(amount) as float8) as volume  from mist_trades_tmp  where (current_timestamp - created_at) < '24 hours' group by market_id";
     let mut markets: Vec<MarketVolume> = Vec::new();
     let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
     if let Err(err) = result {
         println!("get_marketID_volume failed {:?}", err);
         if !crate::restartDB() {
-            return markets;
+            return;
         }
         result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
     }
@@ -123,116 +135,77 @@ pub fn list_marketID_volume() -> Vec<MarketVolume> {
         };
         markets.push(info);
     }
-
-    markets
 }
 
-pub fn get_marketID_volume(id: &str) -> f64 {
-    let sql = "select cast(sum(amount) as float8) as volume  from mist_trades_tmp  where (current_timestamp - created_at) < '24 hours' and market_id=$1";
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[&id]);
+pub fn update_order(order: &UpdateOrder) {
+    /*
+          const [err, result]: [any, any] = await to(this.clientDB
+            .query('UPDATE mist_orders SET (available_amount,confirmed_amount,canceled_amount,\
+                pending_amount,status,updated_at)=\
+                (available_amount+$1,confirmed_amount+$2,canceled_amount+$3,pending_amount+$4,$5,$6) WHERE id=$7', update_info));
+
+    */
+    // fixme:注入的写法暂时有问题，先直接拼接
+    let sql = format!("UPDATE mist_orders SET (available_amount,confirmed_amount,canceled_amount,pending_amount,status,updated_at)=\
+                (available_amount+{},confirmed_amount+{},canceled_amount+{},pending_amount+{},{},{}) WHERE id=$7",
+                );
+    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[&order]);
     if let Err(err) = result {
         println!("get_marketID_volume failed {:?}", err);
         if !crate::restartDB() {
-            return 0.0;
+            return;
         }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[&id]);
+        result = crate::CLIENTDB.lock().unwrap().query(sql, &[&order]);
     }
     let rows = result.unwrap();
     let x: Option<f64> = rows[0].get(0);
     if x == None {
-        println!("{} have no trade within 24 hours", id);
-        return 0.00;
+        println!("{:?} have no trade within 24 hours", order);
+        return;
     }
-    x.unwrap()
 }
-
-pub fn list_markets() -> Vec<MarketInfo> {
-    let sql = "select id,base_token_address,base_token_symbol,quote_token_address,quote_token_symbol from mist_markets where online=true";
-    let mut markets: Vec<MarketInfo> = Vec::new();
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
+*/
+pub fn get_order(id: &str) -> UpdateOrder {
+    let sql = "select id,trader_address,status,\
+             cast(amount as float8),\
+            cast(available_amount as float8),\
+            cast(confirmed_amount as float8),\
+            cast(canceled_amount as float8),\
+            cast(pending_amount as float8),\
+            cast(updated_at as text) \
+            from mist_orders_tmp where id=$1";
+    let mut order: UpdateOrder = Default::default();
+    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[&id]);
     if let Err(err) = result {
-        println!("get_active_address_num failed {:?}", err);
+        println!("get UpdateOrder failed {:?}", err);
         if !crate::restartDB() {
-            return markets;
+            return order;
         }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
+        result = crate::CLIENTDB.lock().unwrap().query(sql, &[&id]);
     }
+    //id 唯一，直接去第一个成员
     let rows = result.unwrap();
-    for row in rows {
-        let info = MarketInfo {
-            id: row.get(0),
-            base_token_address: row.get(1),
-            base_token_symbol: row.get(2),
-            quote_token_address: row.get(3),
-            quote_token_symbol: row.get(4),
-        };
-        markets.push(info);
-    }
-    markets
+    order = UpdateOrder {
+        id: rows[0].get(0),
+        trader_address: rows[0].get(1),
+        status: rows[0].get(2),
+        amount: rows[0].get(3),
+        available_amount: rows[0].get(4),
+        confirmed_amount: rows[0].get(5),
+        canceled_amount: rows[0].get(6),
+        pending_amount: rows[0].get(7),
+        updated_at: rows[0].get(8),
+    };
+    order
 }
 
-
-pub fn get_active_address_num() -> i32 {
-    let sql = "select cast(count(1) as int) from (select taker from mist_trades_tmp where (current_timestamp - created_at) < '24 hours' group by taker)s";
-    let mut num = 0;
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
-    if let Err(err) = result {
-        println!("get_active_address_num failed {:?}", err);
-        if !crate::restartDB() {
-            return 0;
-        }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
-    }
-    let rows = result.unwrap();
-    for row in rows {
-        num = row.get(0);
-    }
-    num
-}
-
-pub fn get_trades_num() -> i32 {
-    let sql = "select cast(count(1) as int) from mist_trades_tmp where (current_timestamp - created_at) < '24 hours'";
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
-    let mut num = 0;
-    if let Err(err) = result {
-        println!("get_trades_num failed {:?}", err);
-        if !crate::restartDB() {
-            return 0;
-        }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
-    }
-    let rows = result.unwrap();
-    for row in rows {
-        num = row.get(0);
-    }
-    num
-}
-
-pub fn get_new_address_num() -> i32 {
-    let sql = "select cast(count(1) as int) from mist_users where (current_timestamp - created_at) < '24 hours'";
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
-    let mut num = 0;
-    if let Err(err) = result {
-        println!("get_new_address_num failed {:?}", err);
-        if !crate::restartDB() {
-            return 0;
-        }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
-    }
-    let rows = result.unwrap();
-    for row in rows {
-        num = row.get(0);
-    }
-    num
-}
-
-pub fn list_available_orders(side: &str,channel: &str) -> Vec<EngineOrder> {
+pub fn list_available_orders(side: &str, channel: &str) -> Vec<EngineOrder> {
     let mut sort_by = "ASC";
     if side == "buy" {
         sort_by = "DESC";
     }
-    let sql = format!( "select id,cast(price as float8),cast(available_amount as float8),side,cast(created_at as text) from mist_orders_tmp \
-    where market_id='{}' and available_amount>0 and side='{}' order by price {} ,created_at ASC limit 10",channel,side,sort_by);
+    let sql = format!("select id,cast(price as float8),cast(available_amount as float8),side,cast(created_at as text) from mist_orders_tmp \
+    where market_id='{}' and available_amount>0 and side='{}' order by price {} ,created_at ASC limit 10", channel, side, sort_by);
     println!("list_available_orders failed333 {}", sql);
     let mut orders: Vec<EngineOrder> = Vec::new();
     let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
@@ -247,7 +220,7 @@ pub fn list_available_orders(side: &str,channel: &str) -> Vec<EngineOrder> {
     for row in rows {
         let info = EngineOrder {
             id: row.get(0),
-            price : row.get(1),
+            price: row.get(1),
             amount: row.get(2),
             side: row.get(3),
             created_at: row.get(4),

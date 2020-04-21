@@ -47,20 +47,11 @@ pub fn engine_start() {
             // println!("No order messages available right now.");
             continue;
         }
-        unsafe {
-            println!("available buy order len {},available sell order len {},--BUY-{:?},--------SELL{:?}",
-                     crate::available_buy_orders.len(),crate::available_sell_orders.len(),
-                     crate::available_buy_orders,crate::available_sell_orders);
-        }
         for ms in mss.iter() {
             for m in ms.messages() {
                 println!("matched ----555");
                 let mut message = String::new();
-                // for a in m.value.iter() {
-                //println!(" N: {:x?}", a);
-                //signature_string.push(a);
                 let message = String::from_utf8_lossy(m.value);
-               // println!("older order {}",message);
                 let mut decoded_message: EngineOrder = Default::default();
                 if let Ok(tmp) = json::decode(&message) {
                     decoded_message = tmp;
@@ -70,24 +61,14 @@ pub fn engine_start() {
                 decoded_message.price = to_fix(decoded_message.price,4);
                 decoded_message.amount = to_fix(decoded_message.amount,4);
                // println!("new order {:?},---{}--{}",decoded_message,message,to_fix(decoded_message.amount,4));
+                // todo:checkout available amount
                 let orders = engine::matched(decoded_message);
-                // write!(message,"{}",message);1
                 println!("matched {:?}",orders);
-                println!("matched ----444");
                 // println!("{}:{}@{}: {:?}", ms.topic(), ms.partition(), m.offset, message);
             }
-            println!("matched1 ---111");
             let _ = crate::ORDER_CONSUMER.lock().unwrap().consume_messageset(ms);
-            println!("matched2 ---222");
-
-        }
-        unsafe {
-            println!("afterrrrr  available buy order len {},available sell order len {}---BUY{:?},---------SELL{:?}",
-                     crate::available_buy_orders.len(),crate::available_sell_orders.len(),crate::available_buy_orders,
-                     crate::available_sell_orders);
         }
         crate::ORDER_CONSUMER.lock().unwrap().commit_consumed();
-        println!("matched3 ---333");
     }
 }
 
@@ -95,38 +76,24 @@ pub fn flush_start() {
     loop {
         unsafe {
             if  crate::trades.len() > 0{
-                println!("get an engine trade {:?}", crate::trades);
-                trades.pop();
+                let pending_trades = &crate::trades;
+                for trade in pending_trades {
+                    println!("get an engine trade {:?}", trade);
+                    // todo:update order
+                    // todo:insert trade
+                    let mut taker_order = crate::models::get_order(&trade.taker_order_id);
+                    let  mut maker_order = crate::models::get_order(&trade.maker_order_id);
+                    println!("3333----{:?}{:?}---33",taker_order,maker_order);
+                    flush::update_order(& mut taker_order,&trade);
+                    flush::update_order(& mut maker_order,&trade);
+
+                    trades.pop();
+                }
+               // flush::insert_trade(&taker_order,&maker_order,pending_trades);
                 continue;
             }
             println!("have no engine trade {:?}", crate::trades);
             std::thread::sleep(std::time::Duration::new(5,0));
         }
     }
-
-    /*
-    loop {
-        let mss = crate::TRADE_PRODUCER.lock().unwrap().poll().unwrap();
-        if mss.is_empty() {
-            println!("No flush messages available right now.");
-            continue;
-        }
-
-        for ms in mss.iter() {
-            for m in ms.messages() {
-                let mut message = String::new();
-                // for a in m.value.iter() {
-                //println!(" N: {:x?}", a);
-                //signature_string.push(a);
-                let message = String::from_utf8_lossy(m.value);
-                // write!(message,"{}",message);
-                //println!("catch flush messages33 {}", message);
-               // update_balance();
-                // println!("{}:{}@{}: {:?}", ms.topic(), ms.partition(), m.offset, message);
-            }
-            let _ = crate::TRADE_PRODUCER.lock().unwrap().consume_messageset(ms);
-        }
-        crate::TRADE_PRODUCER.lock().unwrap().commit_consumed();
-    }
-    */
 }
