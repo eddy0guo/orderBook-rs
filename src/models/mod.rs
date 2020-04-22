@@ -49,18 +49,18 @@ pub struct EngineOrder {
 
 #[derive(Deserialize, Debug, Default)]
 pub struct TradeInfo {
-    id: i32,
-    transaction_id: i32,
-    transaction_hash: String,
-    status: String,
-    market_id: String,
-    maker: String,
-    taker: String,
-    price: String,
-    amount: String,
-    taker_side: String,
-    maker_order_id: String,
-    taker_order_id: String,
+    pub id: i32,
+    pub transaction_id: i32,
+    pub transaction_hash: String,
+    pub status: String,
+    pub market_id: String,
+    pub maker: String,
+    pub taker: String,
+    pub price: f64,
+    pub amount: f64,
+    pub taker_side: String,
+    pub maker_order_id: String,
+    pub taker_order_id: String
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -115,8 +115,59 @@ pub fn get_current_price_marketID(id: &str) -> f64 {
     }
     price
 }
+
 /*
-pub fn insert_trade(trade: &TradeInfo){
+ let query = 'values(';
+        let tradesArr: any[] = [];
+        for (const index in tradesInfo as any[]) {
+            if (tradesInfo[index]) {
+                let temp_value = '';
+                for (let i = 1; i <= 14; i++) {
+                    if (i < 14) {
+                        temp_value += '$' + (i + 14 * Number(index)) + ',';
+                    } else {
+                        temp_value += '$' + (i + 14 * Number(index));
+                    }
+                }
+                if (Number(index) < tradesInfo.length - 1) {
+                    query = query + temp_value + '),(';
+                } else {
+                    query = query + temp_value + ')';
+                }
+                tradesArr = tradesArr.concat(tradesInfo[index]);
+            }
+        }
+
+        const [err, result]: [any, any] = await to(this.queryWithLog('insert into mist_trades ' + query, tradesArr));
+        if (err) {
+            console.error('insert_traders_ failed', err, tradesInfo);
+            await this.handlePoolError(err);
+        }
+*/
+/*
+pub fn insert_trade(trades: Vec<TradeInfo>){
+    let mut query = "values(";
+    let tradesArr = Default::default();
+    let mut index = 0;
+    for trade in trades {
+            let mut temp_value = "".to_string();
+            for i in 1..14 {
+                if (i < 14) {
+                    temp_value = format!("{}${},",temp_value,i + 14 * index);
+                } else {
+                    temp_value = format!("{}${}",temp_value,i + 14 * index);
+                    //temp_value =+ '$' + (i + 14 * index);
+                }
+            }
+            if (index < trades.length - 1) {
+                query = formart!("{}{}),(",query,temp_value);
+            } else {
+                query = formart!("{}{})",query,temp_value);
+            }
+            tradesArr = tradesArr.push(trade);
+            index += 1;
+    }
+
     let sql = "select market_id,cast(sum(amount) as float8) as volume  from mist_trades_tmp  where (current_timestamp - created_at) < '24 hours' group by market_id";
     let mut markets: Vec<MarketVolume> = Vec::new();
     let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
@@ -135,8 +186,7 @@ pub fn insert_trade(trade: &TradeInfo){
         };
         markets.push(info);
     }
-}
-*/
+}*/
 pub fn update_order(order: &UpdateOrder) {
     // fixme:注入的写法暂时有问题，先直接拼接
     let sql =

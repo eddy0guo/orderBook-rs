@@ -100,10 +100,9 @@ pub fn flush_start() {
                     println!("3333----{:?}{:?}---33", taker_order, maker_order);
                     flush::update_order(&mut taker_order, &trade);
                     flush::update_order(&mut maker_order, &trade);
-
+                    flush::generate_trade(&taker_order,&maker_order,&trade);
                     trades.pop();
                 }
-                // flush::insert_trade(&taker_order,&maker_order,pending_trades);
                 continue;
             }
             println!("have no engine trade {:?}", crate::trades);
