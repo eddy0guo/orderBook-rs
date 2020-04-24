@@ -66,9 +66,9 @@ pub fn engine_start() {
                 } else {
                     println!("this is not a erc20 transfer");
                 }
-                decoded_message.price = to_fix(decoded_message.price, 4);
-                decoded_message.amount = to_fix(decoded_message.amount, 4);
-                // println!("new order {:?},---{}--{}",decoded_message,message,to_fix(decoded_message.amount,4));
+                decoded_message.price = decoded_message.price.to_fix( 4);
+                decoded_message.amount = decoded_message.amount.to_fix( 4);
+                println!("new order--hello- {:?},---{}--{}",decoded_message,message,decoded_message.amount.to_fix(4));
                 // todo:checkout available amount
                 let orders = engine::matched(decoded_message);
                 println!("matched {:?}", orders);

@@ -1,5 +1,5 @@
 use crate::models::*;
-use crate::util::to_fix;
+use crate::util::MathOperation;
 use kafka::producer::{Producer, Record, RequiredAcks};
 use log::__private_api_enabled;
 use rustc_serialize::json;
@@ -97,9 +97,9 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
             );
 
             let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
-            let current_available_amount = to_fix(taker_order.amount - sum_matched, 4);
+            let current_available_amount = (taker_order.amount - sum_matched).to_fix(4);
             let mut next_available_amount =
-                to_fix(current_available_amount - current_opponents_amount, 4);
+                (current_available_amount - current_opponents_amount).to_fix(4);
             if current_available_amount > 0.0 && price_gap <= 0.0 {
                 println!(
                     "add_available_orders5555--bbb = {:?}",
@@ -123,7 +123,7 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
                     matched_amount = current_available_amount;
                     //crate::available_sell_orders[0].amount -= current_available_amount;
                     opponents_available_orders[0].amount =
-                        to_fix(current_opponents_amount - current_available_amount, 4);
+                        (current_opponents_amount - current_available_amount).to_fix( 4);
                     let mut matched_order = opponents_available_orders[0].clone();
                     matched_order.amount = current_available_amount;
                     matched_orders.push(matched_order.clone());
@@ -155,7 +155,7 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
                 "add_available_orders5555--zzz = {:?}",
                 opponents_available_orders
             );
-            sum_matched = to_fix(sum_matched + matched_amount, 4);
+            sum_matched = (sum_matched + matched_amount).to_fix( 4);
         }
     }
     matched_orders

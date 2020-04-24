@@ -16,8 +16,8 @@ use std::ops::Mul;
 //  "pending","partial_filled","cancled","full_filled" or ""
 pub fn update_order(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool {
     // todo:更新redis余额
-    order.available_amount = to_fix(order.available_amount - engine_trade.amount, 4);
-    order.pending_amount = to_fix(order.pending_amount + engine_trade.amount, 4);
+    order.available_amount = (order.available_amount - engine_trade.amount).to_fix( 4);
+    order.pending_amount = (order.pending_amount + engine_trade.amount).to_fix( 4);
     order.updated_at = get_current_time();
     if order.available_amount > 0.0 && order.available_amount < order.amount {
         order.status = "partial_filled".to_string();
