@@ -16,8 +16,8 @@ use std::ops::Mul;
 //  "pending","partial_filled","cancled","full_filled" or ""
 pub fn update_order(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool {
     // todo:更新redis余额
-    order.available_amount = (order.available_amount - engine_trade.amount).to_fix( 4);
-    order.pending_amount = (order.pending_amount + engine_trade.amount).to_fix( 4);
+    order.available_amount = (order.available_amount - engine_trade.amount).to_fix(4);
+    order.pending_amount = (order.pending_amount + engine_trade.amount).to_fix(4);
     order.updated_at = get_current_time();
     if order.available_amount > 0.0 && order.available_amount < order.amount {
         order.status = "partial_filled".to_string();
@@ -55,11 +55,20 @@ pub fn generate_trade(
             updated_at: format!("'{}'", get_current_time()),
             created_at: format!("'{}'", get_current_time()),
         };
-        let data = format!("{}{}{}{}{}{}{}{}{}",trade.market_id,trade.maker,trade.taker,
-                            trade.price,trade.amount,trade.taker_side,trade.maker_order_id,
-                            trade.taker_order_id,trade.created_at);
+        let data = format!(
+            "{}{}{}{}{}{}{}{}{}",
+            trade.market_id,
+            trade.maker,
+            trade.taker,
+            trade.price,
+            trade.amount,
+            trade.taker_side,
+            trade.maker_order_id,
+            trade.taker_order_id,
+            trade.created_at
+        );
         let txid = sha256(data);
-        trade.id = format!("'{}'",txid);
+        trade.id = format!("'{}'", txid);
         let trade_arr = struct2array(&trade);
         println!("generate a trade={:?}-----", trade);
         trade_arr

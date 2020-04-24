@@ -75,7 +75,10 @@ use std::ptr::null;
 use std::sync::Mutex;
 
 pub fn get_max_transaction_id() -> i32 {
-    let sql = format!("select transaction_id  from {}  order by created_at desc limit 1",crate::READ_TRADE_TABLE);
+    let sql = format!(
+        "select transaction_id  from {}  order by created_at desc limit 1",
+        crate::READ_TRADE_TABLE
+    );
     let mut transaction_id: i32 = 0;
     let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
 
@@ -94,7 +97,7 @@ pub fn get_max_transaction_id() -> i32 {
 }
 
 pub fn insert_trade(trades: &mut Vec<Vec<String>>) {
-    let mut query = format!("insert into {} values(",crate::WRITE_TRADE_TABLE);
+    let mut query = format!("insert into {} values(", crate::WRITE_TRADE_TABLE);
     let mut tradesArr: Vec<&str> = Default::default();
     let mut index = 0;
     let trades_len = trades.len();
@@ -162,14 +165,17 @@ pub fn update_order(order: &UpdateOrder) {
 }
 
 pub fn get_order(id: &str) -> UpdateOrder {
-    let sql = format!("select id,trader_address,status,\
+    let sql = format!(
+        "select id,trader_address,status,\
              cast(amount as float8),\
             cast(available_amount as float8),\
             cast(confirmed_amount as float8),\
             cast(canceled_amount as float8),\
             cast(pending_amount as float8),\
             cast(updated_at as text) \
-            from {} where id=$1",crate::READ_ORDER_TABLE);
+            from {} where id=$1",
+        crate::READ_ORDER_TABLE
+    );
     let mut order: UpdateOrder = Default::default();
     let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[&id]);
     if let Err(err) = result {

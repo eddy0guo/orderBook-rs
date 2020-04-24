@@ -55,7 +55,6 @@ pub fn engine_start() {
                      crate::available_buy_orders.len(), crate::available_sell_orders.len(),
                      crate::available_buy_orders, crate::available_sell_orders);
         }**/
-
         for ms in mss.iter() {
             for m in ms.messages() {
                 let mut message = String::new();
@@ -66,8 +65,8 @@ pub fn engine_start() {
                 } else {
                     println!("decode order message failed");
                 }
-                decoded_message.price = decoded_message.price.to_fix( 4);
-                decoded_message.amount = decoded_message.amount.to_fix( 4);
+                decoded_message.price = decoded_message.price.to_fix(4);
+                decoded_message.amount = decoded_message.amount.to_fix(4);
                 //println!("new order--hello- {:?},---{}--{}",decoded_message,message,decoded_message.amount.to_fix(4));
                 // todo:checkout available amount
                 engine::matched(decoded_message);
@@ -96,7 +95,7 @@ pub fn flush_start() {
                 for trade in pending_trades {
                     let times = index / 100 + 1;
                     crate::transaction_id = current_transaction_id + times;
-                    println!("current transaction_id is {}-----",crate::transaction_id);
+                    println!("current transaction_id is {}-----", crate::transaction_id);
                     println!("get an engine trade {:?}", trade);
                     // todo:update order
                     // todo:insert trade
@@ -104,7 +103,12 @@ pub fn flush_start() {
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
                     flush::update_order(&mut taker_order, &trade);
                     flush::update_order(&mut maker_order, &trade);
-                    let trade_arr = flush::generate_trade(&taker_order, &maker_order, &trade,crate::transaction_id);
+                    let trade_arr = flush::generate_trade(
+                        &taker_order,
+                        &maker_order,
+                        &trade,
+                        crate::transaction_id,
+                    );
                     trades_arr.push(trade_arr);
                     trades.pop();
                 }

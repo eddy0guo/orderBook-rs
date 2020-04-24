@@ -2,20 +2,20 @@ use crate::models::TradeInfo;
 use chrono::offset::LocalResult;
 use chrono::prelude::*;
 use num::ToPrimitive;
+use ring::digest;
 use rust_decimal::Decimal;
 use std::any::Any;
-use std::fmt::Debug;
 use std::ffi::CString;
-use ring::digest;
+use std::fmt::Debug;
 
 // use crate::consume::engine::EngineTrade;
 
 pub trait MathOperation {
-    fn to_fix(&self,precision: u32) -> f64;
+    fn to_fix(&self, precision: u32) -> f64;
 }
 
-impl MathOperation for f64{
-    fn to_fix(&self, precision: u32) -> f64{
+impl MathOperation for f64 {
+    fn to_fix(&self, precision: u32) -> f64 {
         let times = 10_u32.pow(precision);
         let number_tmp = self * times as f64;
         let real_number = number_tmp.round();
@@ -55,7 +55,7 @@ pub fn struct2array<T: Any + Debug>(value: &T) -> Vec<String> {
     trade_vec
 }
 
-pub fn sha256(data:String) ->String{
+pub fn sha256(data: String) -> String {
     let mut buf = Vec::new();
     let mut txid = "".to_string();
 

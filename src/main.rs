@@ -19,6 +19,8 @@ use std::sync::Mutex;
 #[macro_use]
 extern crate lazy_static;
 
+use crate::models::get_max_transaction_id;
+use crate::util::get_current_time;
 use chrono::prelude::*;
 use kafka::producer::{Producer, Record, RequiredAcks};
 use std::fmt::Write;
@@ -26,8 +28,6 @@ use std::ptr::null;
 use std::sync::mpsc::channel;
 use std::time::Duration;
 use std::time::Instant;
-use crate::models::get_max_transaction_id;
-use crate::util::get_current_time;
 
 static mut available_buy_orders: Vec<models::EngineOrder> = Vec::new();
 static mut available_sell_orders: Vec<models::EngineOrder> = Vec::new();
@@ -36,37 +36,27 @@ static mut market_id: String = String::new();
 static kafka_server: &str = "localhost:9092";
 static mut transaction_id: i32 = 0;
 
-const READ_ORDER_TABLE:&str = "mist_orders2";
-const WRITE_ORDER_TABLE:&str = "mist_orders2";
-const READ_TRADE_TABLE:&str = "mist_trades2";
-const WRITE_TRADE_TABLE:&str = "mist_trades2";
-
-
+const READ_ORDER_TABLE: &str = "mist_orders2";
+const WRITE_ORDER_TABLE: &str = "mist_orders2";
+const READ_TRADE_TABLE: &str = "mist_trades2";
+const WRITE_TRADE_TABLE: &str = "mist_trades2";
 
 lazy_static! {
-
     static ref CLIENTDB: Mutex<postgres::Client> = Mutex::new({
         println!("lazy_static--postgres");
         connetDB().unwrap()
     });
-
     static ref ORDER_CONSUMER: Mutex<Consumer> = Mutex::new({
         println!("lazy_static--ORDER_CONSUMER");
-        unsafe{
-                consumer_init(market_id.clone()).unwrap()
-        }
+        unsafe { consumer_init(market_id.clone()).unwrap() }
     });
-
-     static ref TRADE_CONSUMER: Mutex<Consumer> = Mutex::new({
-         println!("lazy_static-CONSUMER-");
-         unsafe{
-                 consumer_init(market_id.clone()).unwrap()
-         }
-     });
-
-     static ref TRADE_PRODUCER: Mutex<Producer> = Mutex::new({
-         println!("lazy_static-TRADE_PRODUCER-");
-         producer_init().unwrap()
+    static ref TRADE_CONSUMER: Mutex<Consumer> = Mutex::new({
+        println!("lazy_static-CONSUMER-");
+        unsafe { consumer_init(market_id.clone()).unwrap() }
+    });
+    static ref TRADE_PRODUCER: Mutex<Producer> = Mutex::new({
+        println!("lazy_static-TRADE_PRODUCER-");
+        producer_init().unwrap()
     });
 }
 
@@ -135,13 +125,21 @@ fn producer_init() -> Result<Producer, KafkaError> {
 
 fn init(market: &str) {
     unsafe {
-        println!("start loading data at {}",get_current_time());
+        println!("start loading data at {}", get_current_time());
         available_buy_orders = models::list_available_orders("buy", market);
-        println!("finished loading {} buy data at {}",available_buy_orders.len(),get_current_time());
+        println!(
+            "finished loading {} buy data at {}",
+            available_buy_orders.len(),
+            get_current_time()
+        );
         available_sell_orders = models::list_available_orders("sell", market);
-        println!("finished loading {} sell data at {}",available_sell_orders.len(),get_current_time());
+        println!(
+            "finished loading {} sell data at {}",
+            available_sell_orders.len(),
+            get_current_time()
+        );
         transaction_id = get_max_transaction_id();
-        println!("finished loading data at {}",get_current_time());
+        println!("finished loading data at {}", get_current_time());
     }
 }
 
