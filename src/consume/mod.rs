@@ -90,8 +90,14 @@ pub fn flush_start() {
         unsafe {
             let mut trades_arr: Vec<Vec<String>> = Default::default();
             if crate::trades.len() > 0 {
+                // todo:每一百+1
                 let pending_trades = &crate::trades;
+                let index = 0;
+                let current_transaction_id = crate::transaction_id;
                 for trade in pending_trades {
+                    let times = index / 100 + 1;
+                    crate::transaction_id = current_transaction_id + times;
+                    println!("current transaction_id is {}-----",crate::transaction_id);
                     println!("get an engine trade {:?}", trade);
                     // todo:update order
                     // todo:insert trade
@@ -99,7 +105,7 @@ pub fn flush_start() {
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
                     flush::update_order(&mut taker_order, &trade);
                     flush::update_order(&mut maker_order, &trade);
-                    let trade_arr = flush::generate_trade(&taker_order, &maker_order, &trade);
+                    let trade_arr = flush::generate_trade(&taker_order, &maker_order, &trade,crate::transaction_id);
                     trades_arr.push(trade_arr);
                     trades.pop();
                 }

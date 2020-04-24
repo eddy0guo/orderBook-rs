@@ -74,80 +74,25 @@ pub struct MarketVolume {
 use std::ptr::null;
 use std::sync::Mutex;
 
-pub fn get_change_rate(marketID: &str) -> f64 {
-    let current_price = get_current_price_marketID(marketID);
-    if current_price == 0.0 {
-        return 0.0;
-    }
-
-    let mut yesterday_price = 0.0;
-    let sql = "select cast(price as float8) from mist_trades_tmp where (current_timestamp - created_at) < '24 hours' and market_id=$1 order by created_at  limit 1";
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[&marketID]);
-    if let Err(err) = result {
-        println!("get_change_rate failed {:?}", err);
-        if !crate::restartDB() {
-            return 0.0;
-        }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[&marketID]);
-    }
-    let rows = result.unwrap();
-    for row in rows {
-        yesterday_price = row.get(0);
-    }
-    if yesterday_price == 0.0 {
-        return 0.0;
-    }
-    let rate = (current_price - yesterday_price) / yesterday_price;
-    rate.mul(100000000.0).floor() / 100000000.0
-}
-
-pub fn get_current_price_marketID(id: &str) -> f64 {
-    let sql = "select cast(price as float8) from mist_trades_tmp where (current_timestamp - created_at) < '24 hours' and market_id=$1 order by created_at desc limit 1";
-    let mut price: f64 = 0.0;
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[&id]);
+pub fn get_max_transaction_id() -> i32 {
+    let sql = "select transaction_id  from mist_trades2  order by created_at desc limit 1";
+    let mut transaction_id: i32 = 0;
+    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
 
     if let Err(err) = result {
         println!("get_marketID_volume failed {:?}", err);
         if !crate::restartDB() {
-            return 0.0;
+            return transaction_id;
         }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[&id]);
+        result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
     }
     let rows = result.unwrap();
     for row in rows {
-        price = row.get(0);
+        transaction_id = row.get(0);
     }
-    price
+    transaction_id
 }
 
-/*
- let query = 'values(';
-        let tradesArr: any[] = [];
-        for (const index in tradesInfo as any[]) {
-            if (tradesInfo[index]) {
-                let temp_value = '';
-                for (let i = 1; i <= 14; i++) {
-                    if (i < 14) {
-                        temp_value += '$' + (i + 14 * Number(index)) + ',';
-                    } else {
-                        temp_value += '$' + (i + 14 * Number(index));
-                    }
-                }
-                if (Number(index) < tradesInfo.length - 1) {
-                    query = query + temp_value + '),(';
-                } else {
-                    query = query + temp_value + ')';
-                }
-                tradesArr = tradesArr.concat(tradesInfo[index]);
-            }
-        }
-
-        const [err, result]: [any, any] = await to(this.queryWithLog('insert into mist_trades ' + query, tradesArr));
-        if (err) {
-            console.error('insert_traders_ failed', err, tradesInfo);
-            await this.handlePoolError(err);
-        }
-*/
 pub fn insert_trade(trades: &mut Vec<Vec<String>>) {
     let mut query = "insert into mist_trades2 values(".to_string();
     let mut tradesArr: Vec<&str> = Default::default();

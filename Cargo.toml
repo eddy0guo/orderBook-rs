@@ -37,7 +37,7 @@ ring = "0.14.6"
 
 
 [[bin]]
-name = "orderBook"
+name = "mist-engine-rs"
 path = "src/main.rs"
 
 [rust]

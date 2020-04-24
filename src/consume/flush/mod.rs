@@ -34,13 +34,14 @@ pub fn generate_trade(
     taker_order: &UpdateOrder,
     maker_order: &UpdateOrder,
     engine_trade: &EngineTrade,
+    transaction_id: i32,
 ) -> Vec<String> {
     // todo:更新redis余额
     //fixme::默认值设计
     unsafe {
         let mut trade = TradeInfo {
             id: format!("'{}'", 0),
-            transaction_id: 0,
+            transaction_id,
             transaction_hash: "''".to_string(),
             status: format!("'{}'", "matched"),
             market_id: format!("'{}'", crate::market_id),

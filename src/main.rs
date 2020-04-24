@@ -26,12 +26,15 @@ use std::ptr::null;
 use std::sync::mpsc::channel;
 use std::time::Duration;
 use std::time::Instant;
+use crate::models::get_max_transaction_id;
 
 static mut available_buy_orders: Vec<models::EngineOrder> = Vec::new();
 static mut available_sell_orders: Vec<models::EngineOrder> = Vec::new();
 static mut trades: Vec<consume::engine::EngineTrade> = Vec::new();
 static mut market_id: String = String::new();
 static kafka_server: &str = "localhost:9092";
+static mut transaction_id: i32 = 0;
+
 
 lazy_static! {
     // let orderTopic = "orderStream".to_owned();
@@ -129,6 +132,7 @@ fn init(market: &str) {
     unsafe {
         available_buy_orders = models::list_available_orders("buy", market);
         available_sell_orders = models::list_available_orders("sell", market);
+        transaction_id = get_max_transaction_id();
     }
 }
 
@@ -143,7 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             unsafe {
                 market_id = market_option[1].to_string();
             }
-            println!("You passed --help as one of the arguments!");
+            println!("You passed --market_id as one of the arguments!");
         }
     }
 
@@ -152,16 +156,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_required_acks(RequiredAcks::One)
         .create()
         .unwrap();
-
-    let mut buf = String::with_capacity(2);
-    for i in 0..10 {
-        let _ = write!(&mut buf, "{}", i); // some computation of the message data to be sent
-        producer
-            .send(&Record::from_value("my-topic", buf.as_bytes()))
-            .unwrap();
-        buf.clear();
-    }
-
     // init("ASIM-CNYC");
     let rt = tokio::runtime::Runtime::new().unwrap();
     let task1 = async {
