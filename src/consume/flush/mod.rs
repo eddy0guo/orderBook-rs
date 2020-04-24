@@ -36,11 +36,12 @@ pub fn generate_trade(
     engine_trade: &EngineTrade,
 ) -> Vec<String> {
     // todo:更新redis余额
+    //fixme::默认值设计
     unsafe {
-        let trade = TradeInfo {
+        let mut trade = TradeInfo {
             id: format!("'{}'", 0),
-            transaction_id: 1,
-            transaction_hash: format!("'{}'", 33),
+            transaction_id: 0,
+            transaction_hash: "''".to_string(),
             status: format!("'{}'", "matched"),
             market_id: format!("'{}'", crate::market_id),
             maker: format!("'{}'", maker_order.trader_address),
@@ -53,8 +54,13 @@ pub fn generate_trade(
             updated_at: format!("'{}'", get_current_time()),
             created_at: format!("'{}'", get_current_time()),
         };
+        let data = format!("{}{}{}{}{}{}{}{}{}",trade.market_id,trade.maker,trade.taker,
+                            trade.price,trade.amount,trade.taker_side,trade.maker_order_id,
+                            trade.taker_order_id,trade.created_at);
+        let txid = sha256(data);
+        trade.id = format!("'{}'",txid);
         let trade_arr = struct2array(&trade);
-        println!("insert_trade-struct2array={:?}--", trade_arr);
+        println!("insert_trade-struct2array={:?}-----", trade);
         trade_arr
     }
 }
