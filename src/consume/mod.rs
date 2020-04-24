@@ -89,18 +89,23 @@ pub fn flush_start() {
         unsafe {
             let mut trades_arr: Vec<Vec<String>> = Default::default();
             if crate::trades.len() > 0 {
+                println!(
+                    "current transaction_id is {},and start flush engine result {:?}",
+                    crate::transaction_id,
+                    crate::trades
+                );
                 let pending_trades = &crate::trades;
-                let index = 0;
+                let mut index = 0;
                 let current_transaction_id = crate::transaction_id;
                 for trade in pending_trades {
                     let times = index / 100 + 1;
                     crate::transaction_id = current_transaction_id + times;
-                    println!("current transaction_id is {}-----", crate::transaction_id);
-                    println!("get an engine trade {:?}", trade);
-                    // todo:update order
-                    // todo:insert trade
                     let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
+                    println!(
+                        "taker_order={:?},maker_order={:?}",
+                        taker_order, maker_order
+                    );
                     flush::update_order(&mut taker_order, &trade);
                     flush::update_order(&mut maker_order, &trade);
                     let trade_arr = flush::generate_trade(
@@ -109,15 +114,18 @@ pub fn flush_start() {
                         &trade,
                         crate::transaction_id,
                     );
+                    println!("generate_trade {:?}", trade_arr);
                     trades_arr.push(trade_arr);
                     trades.pop();
+                    index += 1;
                 }
+                println!("insert trades_arr {:#?}", trades_arr);
                 insert_trade(&mut trades_arr);
                 continue;
             }
             //println!("3333----{:?}{:?}---33", taker_order, maker_order);
             println!("have no engine trade {:?}", crate::trades);
-            std::thread::sleep(std::time::Duration::new(0, 100));
+            std::thread::sleep(std::time::Duration::new(0, 1000));
         }
     }
 }

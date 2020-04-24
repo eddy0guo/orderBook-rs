@@ -27,7 +27,6 @@ pub struct EngineTrade {
 fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_order: EngineOrder) {
     let mut index = 0;
     unsafe {
-        println!("add_available_orders = {:?}", partner_available_orders);
         let mut price_gap = 0.0;
         if partner_available_orders.len() == 0 {
             partner_available_orders.push(new_order);
@@ -56,7 +55,7 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
 }
 
 pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
-    println!("taker_order = {:?}", taker_order);
+    println!("start match_order = {:?}", taker_order);
     let mut matched_orders: Vec<EngineOrder> = Vec::new();
     unsafe {
         let mut sum_matched: f64 = 0.0;
@@ -125,6 +124,7 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
             } else {
                 break;
             }
+            println!("match result {:?}", crate::trades);
             sum_matched = (sum_matched + matched_amount).to_fix(4);
         }
     }

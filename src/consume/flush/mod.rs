@@ -38,6 +38,11 @@ pub fn generate_trade(
 ) -> Vec<String> {
     // todo:更新redis余额
     //fixme::默认值设计
+    println!(
+        "generate a trade={:?}---taker_orderidformat-{}-",
+        engine_trade,
+        format!("'{}'", engine_trade.taker_order_id)
+    );
     unsafe {
         let mut trade = TradeInfo {
             id: format!("'{}'", 0),
@@ -70,7 +75,6 @@ pub fn generate_trade(
         let txid = sha256(data);
         trade.id = format!("'{}'", txid);
         let trade_arr = struct2array(&trade);
-        println!("generate a trade={:?}-----", trade);
         trade_arr
     }
 }
