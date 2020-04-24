@@ -89,6 +89,7 @@ pub fn engine_start() {
 pub fn flush_start() {
     loop {
         unsafe {
+            let mut trades_arr:Vec<Vec<String>> = Default::default();
             if crate::trades.len() > 0 {
                 let pending_trades = &crate::trades;
                 for trade in pending_trades {
@@ -97,16 +98,18 @@ pub fn flush_start() {
                     // todo:insert trade
                     let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
-                    println!("3333----{:?}{:?}---33", taker_order, maker_order);
                     flush::update_order(&mut taker_order, &trade);
                     flush::update_order(&mut maker_order, &trade);
-                    flush::generate_trade(&taker_order,&maker_order,&trade);
+                    let trade_arr = flush::generate_trade(&taker_order,&maker_order,&trade);
+                    trades_arr.push(trade_arr);
                     trades.pop();
                 }
+                insert_trade(&mut trades_arr);
                 continue;
             }
+            //println!("3333----{:?}{:?}---33", taker_order, maker_order);
             println!("have no engine trade {:?}", crate::trades);
-            std::thread::sleep(std::time::Duration::new(5, 0));
+            std::thread::sleep(std::time::Duration::new(0, 100));
         }
     }
 }

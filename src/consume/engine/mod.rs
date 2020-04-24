@@ -148,8 +148,8 @@ pub fn generate_trade(taker_order: & EngineOrder,maker_order: & EngineOrder) {
             price: maker_order2.price,
             amount: maker_order2.amount,
             taker_side: taker_order2.side,
-            maker_order_id: taker_order2.id,
-            taker_order_id: maker_order2.id,
+            maker_order_id: maker_order2.id,
+            taker_order_id: taker_order2.id,
         };
        crate::trades.push(trade);
     }

@@ -48,8 +48,14 @@ pub fn struct2array<T:Any+Debug>(value: &T) -> Vec<String>{
             trade_vec.push(trade.market_id.to_string());
             trade_vec.push(trade.maker.to_string());
             trade_vec.push(trade.taker.to_string());
+            trade_vec.push(trade.price.to_string());
+            trade_vec.push(trade.amount.to_string());
+            trade_vec.push(trade.taker_side.to_string());
             trade_vec.push(trade.maker_order_id.to_string());
             trade_vec.push(trade.taker_order_id.to_string());
+            trade_vec.push(trade.updated_at.to_string());
+            trade_vec.push(trade.created_at.to_string());
+
         }
         None => (),
     };

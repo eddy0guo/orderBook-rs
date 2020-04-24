@@ -32,25 +32,27 @@ pub fn update_order(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool
     true
 }
 
-pub fn generate_trade(taker_order: &UpdateOrder, maker_order: &UpdateOrder, engine_trade: &EngineTrade) -> bool {
+pub fn generate_trade(taker_order: &UpdateOrder, maker_order: &UpdateOrder, engine_trade: &EngineTrade) -> Vec<String> {
     // todo:更新redis余额
     unsafe {
         let trade = TradeInfo {
-            id: 0,
+            id: format!("'{}'",0),
             transaction_id: 1,
-            transaction_hash: "33".to_string(),
-            status: "matched".to_string(),
-            market_id: crate::market_id.to_string(),
-            maker: maker_order.trader_address.clone(),
-            taker: taker_order.trader_address.clone(),
-            price: engine_trade.price,
+            transaction_hash: format!("'{}'",33),
+            status: format!("'{}'","matched"),
+            market_id: format!("'{}'",crate::market_id),
+            maker: format!("'{}'",maker_order.trader_address),
+            taker: format!("'{}'",taker_order.trader_address),
+            price:  engine_trade.price,
             amount: engine_trade.amount,
-            taker_side: engine_trade.taker_side.to_string(),
-            maker_order_id: engine_trade.maker_order_id.to_string(),
-            taker_order_id: engine_trade.taker_order_id.to_string()
+            taker_side: format!("'{}'",engine_trade.taker_side),
+            maker_order_id: format!("'{}'",engine_trade.maker_order_id),
+            taker_order_id: format!("'{}'",engine_trade.taker_order_id),
+            updated_at: format!("'{}'",get_current_time()),
+            created_at:format!("'{}'",get_current_time())
         };
-        let result = struct2array(&trade);
-        println!("insert_trade-struct2array={:?}--",result);
+        let trade_arr = struct2array(&trade);
+        println!("insert_trade-struct2array={:?}--",trade_arr);
+        trade_arr
     }
-    true
 }
