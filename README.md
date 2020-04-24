@@ -1,4 +1,8 @@
 ## mist-engine-rs      
+
+##init
+insert into mist_orders2 select * from mist_orders where market_id='MT-CNYC' and available_amount>0;
+
 ## build
 cargo build or cargo build --release              
 ##usage       
