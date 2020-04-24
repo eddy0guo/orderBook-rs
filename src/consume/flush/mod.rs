@@ -61,7 +61,7 @@ pub fn generate_trade(
         let txid = sha256(data);
         trade.id = format!("'{}'",txid);
         let trade_arr = struct2array(&trade);
-        println!("insert_trade-struct2array={:?}-----", trade);
+        println!("generate a trade={:?}-----", trade);
         trade_arr
     }
 }

@@ -75,16 +75,16 @@ use std::ptr::null;
 use std::sync::Mutex;
 
 pub fn get_max_transaction_id() -> i32 {
-    let sql = "select transaction_id  from mist_trades2  order by created_at desc limit 1";
+    let sql = format!("select transaction_id  from {}  order by created_at desc limit 1",crate::READ_TRADE_TABLE);
     let mut transaction_id: i32 = 0;
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
+    let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
 
     if let Err(err) = result {
-        println!("get_marketID_volume failed {:?}", err);
+        println!("get_max_transaction_id failed {:?}", err);
         if !crate::restartDB() {
             return transaction_id;
         }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[]);
+        result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
     }
     let rows = result.unwrap();
     for row in rows {
@@ -94,11 +94,11 @@ pub fn get_max_transaction_id() -> i32 {
 }
 
 pub fn insert_trade(trades: &mut Vec<Vec<String>>) {
-    let mut query = "insert into mist_trades2 values(".to_string();
+    let mut query = format!("insert into {} values(",crate::WRITE_TRADE_TABLE);
     let mut tradesArr: Vec<&str> = Default::default();
     let mut index = 0;
     let trades_len = trades.len();
-    // INSERT INTO foo (id, name) VALUES (1, 'steven'), (2, 'timothy');",
+    // fixme:注入的写法暂时有问题，先直接拼接
     for trade in trades {
         let mut temp_value = "".to_string();
         for i in 0..trade.len() {
@@ -122,7 +122,6 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>) {
         index += 1;
     }
 
-    // let sql = "select market_id,cast(sum(amount) as float8) as volume  from mist_trades_tmp  where (current_timestamp - created_at) < '24 hours' group by market_id";
     println!(
         "insert_trade successful insert,sql={}---tradesarr={:#?}",
         query, tradesArr
@@ -146,9 +145,9 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>) {
 pub fn update_order(order: &UpdateOrder) {
     // fixme:注入的写法暂时有问题，先直接拼接
     let sql =
-        format!("UPDATE mist_orders2 SET (available_amount,confirmed_amount,canceled_amount,pending_amount,status,updated_at)=\
+        format!("UPDATE {} SET (available_amount,confirmed_amount,canceled_amount,pending_amount,status,updated_at)=\
                 ({},confirmed_amount,canceled_amount,{},'{}','{}') WHERE id='{}'",
-                order.available_amount, order.pending_amount, order.status, order.updated_at, order.id);
+                crate::WRITE_ORDER_TABLE,order.available_amount, order.pending_amount, order.status, order.updated_at, order.id);
     println!("--{}-", sql);
     let mut result = crate::CLIENTDB.lock().unwrap().execute(&*sql, &[]);
     if let Err(err) = result {
@@ -163,22 +162,22 @@ pub fn update_order(order: &UpdateOrder) {
 }
 
 pub fn get_order(id: &str) -> UpdateOrder {
-    let sql = "select id,trader_address,status,\
+    let sql = format!("select id,trader_address,status,\
              cast(amount as float8),\
             cast(available_amount as float8),\
             cast(confirmed_amount as float8),\
             cast(canceled_amount as float8),\
             cast(pending_amount as float8),\
             cast(updated_at as text) \
-            from mist_orders2 where id=$1";
+            from {} where id=$1",crate::READ_ORDER_TABLE);
     let mut order: UpdateOrder = Default::default();
-    let mut result = crate::CLIENTDB.lock().unwrap().query(sql, &[&id]);
+    let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[&id]);
     if let Err(err) = result {
-        println!("get UpdateOrder failed {:?}", err);
+        println!("UpdateOrder failed {:?}", err);
         if !crate::restartDB() {
             return order;
         }
-        result = crate::CLIENTDB.lock().unwrap().query(sql, &[&id]);
+        result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[&id]);
     }
     //id 唯一，直接去第一个成员
     let rows = result.unwrap();
@@ -201,13 +200,12 @@ pub fn list_available_orders(side: &str, channel: &str) -> Vec<EngineOrder> {
     if side == "buy" {
         sort_by = "DESC";
     }
-    let sql = format!("select id,cast(price as float8),cast(available_amount as float8),side,cast(created_at as text) from mist_orders2 \
-    where market_id='{}' and available_amount>0 and side='{}' order by price {} ,created_at ASC limit 10", channel, side, sort_by);
-    println!("list_available_orders failed333 {}", sql);
+    let sql = format!("select id,cast(price as float8),cast(available_amount as float8),side,cast(created_at as text) from {} \
+    where market_id='{}' and available_amount>0 and side='{}' order by price {} ,created_at ASC", crate::READ_ORDER_TABLE,channel, side, sort_by);
     let mut orders: Vec<EngineOrder> = Vec::new();
     let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
     if let Err(err) = result {
-        println!("get_active_address_num failed {:?}", err);
+        println!("list_available_orders failed {:?}", err);
         if !crate::restartDB() {
             return orders;
         }
@@ -224,6 +222,5 @@ pub fn list_available_orders(side: &str, channel: &str) -> Vec<EngineOrder> {
         };
         orders.push(info);
     }
-    println!("list_available_orders 444 {:?}------44", orders);
     orders
 }

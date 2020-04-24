@@ -31,11 +31,11 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
         let mut price_gap = 0.0;
         if partner_available_orders.len() == 0 {
             partner_available_orders.push(new_order);
-            println!("add_available_orders 2222= {:?}", partner_available_orders);
+            //println!("add_available_orders 2222= {:?}", partner_available_orders);
 
             return;
         }
-        println!("add_available_orders333 = {:?}", partner_available_orders);
+        // println!("add_available_orders333 = {:?}", partner_available_orders);
         if new_order.side == "buy" {
             price_gap = new_order.price - partner_available_orders[index].price;
         } else {
@@ -80,46 +80,28 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
                 }
             }
 
-            println!("add_available_orders0000 = {:?}", partner_available_orders);
-            println!(
-                "add_available_orders0000-aaa = {:?}",
-                opponents_available_orders
-            );
+            //println!("add_available_orders0000 = {:?}", partner_available_orders);
+            //println!(
+            //    "add_available_orders0000-aaa = {:?}",
+            //    opponents_available_orders
+            //);
             if opponents_available_orders.len() == 0 {
                 add_available_orders(partner_available_orders, taker_order.clone());
-                println!("add_available_orders444 = {:?}", partner_available_orders);
                 return matched_orders;
             }
-            println!("add_available_orders5555 = {:?}", partner_available_orders);
-            println!(
-                "add_available_orders5555--aaa = {:?}",
-                opponents_available_orders
-            );
 
             let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
             let current_available_amount = (taker_order.amount - sum_matched).to_fix(4);
             let mut next_available_amount =
                 (current_available_amount - current_opponents_amount).to_fix(4);
             if current_available_amount > 0.0 && price_gap <= 0.0 {
-                println!(
-                    "add_available_orders5555--bbb = {:?}",
-                    opponents_available_orders
-                );
                 // println!("kkk000----{}---{}----{}-", current_available_amount, taker_order.price, crate::available_buy_orders[0].price);
                 if next_available_amount > 0.0 {
-                    println!(
-                        "add_available_orders5555--ccc = {:?}",
-                        opponents_available_orders
-                    );
                     matched_amount = current_opponents_amount;
                     matched_orders.push(opponents_available_orders[0].clone());
                     generate_trade(&taker_order, &opponents_available_orders[0]);
                     opponents_available_orders.remove(0);
                 } else if next_available_amount < 0.0 {
-                    println!(
-                        "add_available_orders5555--ddd = {:?}",
-                        opponents_available_orders
-                    );
                     matched_amount = current_available_amount;
                     //crate::available_sell_orders[0].amount -= current_available_amount;
                     opponents_available_orders[0].amount =
@@ -130,10 +112,6 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
                     generate_trade(&taker_order, &opponents_available_orders[0]);
                     break;
                 } else {
-                    println!(
-                        "add_available_orders5555--eee = {:?}",
-                        opponents_available_orders
-                    );
                     matched_orders.push(opponents_available_orders[0].clone());
                     generate_trade(&taker_order, &opponents_available_orders[0]);
                     opponents_available_orders.remove(0);
@@ -143,18 +121,10 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
                 taker_order.amount = current_available_amount;
                 // println!("kkk2222---{:?}---{}-", taker_order, current_available_amount);
                 add_available_orders(partner_available_orders, taker_order);
-                println!(
-                    "add_available_orders5555--yyy = {:?}",
-                    opponents_available_orders
-                );
                 break;
             } else {
                 break;
             }
-            println!(
-                "add_available_orders5555--zzz = {:?}",
-                opponents_available_orders
-            );
             sum_matched = (sum_matched + matched_amount).to_fix( 4);
         }
     }

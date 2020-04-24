@@ -49,38 +49,38 @@ pub fn engine_start() {
             // println!("No order messages available right now.");
             continue;
         }
+        /**
         unsafe {
             println!("available buy order len {},available sell order len {},--BUY-{:?},--------SELL{:?}",
                      crate::available_buy_orders.len(), crate::available_sell_orders.len(),
                      crate::available_buy_orders, crate::available_sell_orders);
-        }
+        }**/
 
         for ms in mss.iter() {
             for m in ms.messages() {
-                println!("matched ----555");
                 let mut message = String::new();
                 let message = String::from_utf8_lossy(m.value);
                 let mut decoded_message: EngineOrder = Default::default();
                 if let Ok(tmp) = json::decode(&message) {
                     decoded_message = tmp;
                 } else {
-                    println!("this is not a erc20 transfer");
+                    println!("decode order message failed");
                 }
                 decoded_message.price = decoded_message.price.to_fix( 4);
                 decoded_message.amount = decoded_message.amount.to_fix( 4);
-                println!("new order--hello- {:?},---{}--{}",decoded_message,message,decoded_message.amount.to_fix(4));
+                //println!("new order--hello- {:?},---{}--{}",decoded_message,message,decoded_message.amount.to_fix(4));
                 // todo:checkout available amount
-                let orders = engine::matched(decoded_message);
-                println!("matched {:?}", orders);
+                engine::matched(decoded_message);
                 // println!("{}:{}@{}: {:?}", ms.topic(), ms.partition(), m.offset, message);
             }
             let _ = crate::ORDER_CONSUMER.lock().unwrap().consume_messageset(ms);
         }
+        /**
         unsafe {
             println!("available buy order len {},available sell order len {},--BUY-{:?},--------SELL{:?}",
                      crate::available_buy_orders.len(), crate::available_sell_orders.len(),
                      crate::available_buy_orders, crate::available_sell_orders);
-        }
+        }**/
         crate::ORDER_CONSUMER.lock().unwrap().commit_consumed();
     }
 }
@@ -90,7 +90,6 @@ pub fn flush_start() {
         unsafe {
             let mut trades_arr: Vec<Vec<String>> = Default::default();
             if crate::trades.len() > 0 {
-                // todo:每一百+1
                 let pending_trades = &crate::trades;
                 let index = 0;
                 let current_transaction_id = crate::transaction_id;

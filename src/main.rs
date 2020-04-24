@@ -27,6 +27,7 @@ use std::sync::mpsc::channel;
 use std::time::Duration;
 use std::time::Instant;
 use crate::models::get_max_transaction_id;
+use crate::util::get_current_time;
 
 static mut available_buy_orders: Vec<models::EngineOrder> = Vec::new();
 static mut available_sell_orders: Vec<models::EngineOrder> = Vec::new();
@@ -35,10 +36,14 @@ static mut market_id: String = String::new();
 static kafka_server: &str = "localhost:9092";
 static mut transaction_id: i32 = 0;
 
+const READ_ORDER_TABLE:&str = "mist_orders2";
+const WRITE_ORDER_TABLE:&str = "mist_orders2";
+const READ_TRADE_TABLE:&str = "mist_trades2";
+const WRITE_TRADE_TABLE:&str = "mist_trades2";
+
+
 
 lazy_static! {
-    // let orderTopic = "orderStream".to_owned();
-    // let bridgeTopic = "bridgeStream".to_owned();
 
     static ref CLIENTDB: Mutex<postgres::Client> = Mutex::new({
         println!("lazy_static--postgres");
@@ -130,15 +135,18 @@ fn producer_init() -> Result<Producer, KafkaError> {
 
 fn init(market: &str) {
     unsafe {
+        println!("start loading data at {}",get_current_time());
         available_buy_orders = models::list_available_orders("buy", market);
+        println!("finished loading {} buy data at {}",available_buy_orders.len(),get_current_time());
         available_sell_orders = models::list_available_orders("sell", market);
+        println!("finished loading {} sell data at {}",available_sell_orders.len(),get_current_time());
         transaction_id = get_max_transaction_id();
+        println!("finished loading data at {}",get_current_time());
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("main--");
     env_logger::init();
     for argument in env::args() {
         if argument.contains("--market_id=") {
@@ -150,12 +158,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("You passed --market_id as one of the arguments!");
         }
     }
-
-    let mut producer = Producer::from_hosts(vec!["localhost:9092".to_owned()])
-        .with_ack_timeout(Duration::from_secs(1))
-        .with_required_acks(RequiredAcks::One)
-        .create()
-        .unwrap();
     // init("ASIM-CNYC");
     let rt = tokio::runtime::Runtime::new().unwrap();
     let task1 = async {
@@ -165,9 +167,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let task2 = async {
         consume::flush_start();
-        println!("ctrl-c received22!");
     };
     rt.spawn(task2);
+
     tokio::signal::ctrl_c().await?;
     println!("ctrl-c received!");
     Ok(())
