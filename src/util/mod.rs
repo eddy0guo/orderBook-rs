@@ -1,13 +1,13 @@
-use rust_decimal::Decimal;
-use num::ToPrimitive;
-use chrono::prelude::*;
+use crate::models::TradeInfo;
 use chrono::offset::LocalResult;
+use chrono::prelude::*;
+use num::ToPrimitive;
+use rust_decimal::Decimal;
 use std::any::Any;
 use std::fmt::Debug;
-use crate::models::TradeInfo;
 // use crate::consume::engine::EngineTrade;
 
-pub fn to_fix(mut number:f64,mut precision:u32) -> f64{
+pub fn to_fix(mut number: f64, mut precision: u32) -> f64 {
     let times = 10_u32.pow(precision);
     let number_tmp = number * times as f64;
     let real_number = number_tmp.round();
@@ -16,7 +16,7 @@ pub fn to_fix(mut number:f64,mut precision:u32) -> f64{
     scaled
 }
 
-pub fn get_current_time() -> String{
+pub fn get_current_time() -> String {
     let dt: DateTime<Local> = Local::now();
     dt.format("%Y-%m-%d %H:%M:%S.%f").to_string()
 }
@@ -36,8 +36,8 @@ pub struct TradeInfo {
     taker_order_id: String,
 }
 */
-pub fn struct2array<T:Any+Debug>(value: &T) -> Vec<String>{
-    let mut trade_vec: Vec<String>= vec![];
+pub fn struct2array<T: Any + Debug>(value: &T) -> Vec<String> {
+    let mut trade_vec: Vec<String> = vec![];
     let value = value as &Any;
     match value.downcast_ref::<TradeInfo>() {
         Some(trade) => {
@@ -55,7 +55,6 @@ pub fn struct2array<T:Any+Debug>(value: &T) -> Vec<String>{
             trade_vec.push(trade.taker_order_id.to_string());
             trade_vec.push(trade.updated_at.to_string());
             trade_vec.push(trade.created_at.to_string());
-
         }
         None => (),
     };

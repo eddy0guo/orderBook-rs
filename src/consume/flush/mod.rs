@@ -1,19 +1,17 @@
-use std::cmp::Ord;
-use std::collections::BTreeMap;
+use super::engine::EngineTrade;
 use crate::models::*;
 use crate::util::*;
-use super::engine::EngineTrade;
+use std::cmp::Ord;
+use std::collections::BTreeMap;
 use std::time::SystemTime;
-
 
 use jsonrpc_http_server::jsonrpc_core::*;
 use jsonrpc_http_server::*;
+use kafka::error::Error as KafkaError;
 use serde::Deserialize;
+use std::any::Any;
 use std::env;
 use std::ops::Mul;
-use std::any::Any;
-use kafka::error::Error as KafkaError;
-
 
 //  "pending","partial_filled","cancled","full_filled" or ""
 pub fn update_order(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool {
@@ -32,27 +30,31 @@ pub fn update_order(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool
     true
 }
 
-pub fn generate_trade(taker_order: &UpdateOrder, maker_order: &UpdateOrder, engine_trade: &EngineTrade) -> Vec<String> {
+pub fn generate_trade(
+    taker_order: &UpdateOrder,
+    maker_order: &UpdateOrder,
+    engine_trade: &EngineTrade,
+) -> Vec<String> {
     // todo:更新redis余额
     unsafe {
         let trade = TradeInfo {
-            id: format!("'{}'",0),
+            id: format!("'{}'", 0),
             transaction_id: 1,
-            transaction_hash: format!("'{}'",33),
-            status: format!("'{}'","matched"),
-            market_id: format!("'{}'",crate::market_id),
-            maker: format!("'{}'",maker_order.trader_address),
-            taker: format!("'{}'",taker_order.trader_address),
-            price:  engine_trade.price,
+            transaction_hash: format!("'{}'", 33),
+            status: format!("'{}'", "matched"),
+            market_id: format!("'{}'", crate::market_id),
+            maker: format!("'{}'", maker_order.trader_address),
+            taker: format!("'{}'", taker_order.trader_address),
+            price: engine_trade.price,
             amount: engine_trade.amount,
-            taker_side: format!("'{}'",engine_trade.taker_side),
-            maker_order_id: format!("'{}'",engine_trade.maker_order_id),
-            taker_order_id: format!("'{}'",engine_trade.taker_order_id),
-            updated_at: format!("'{}'",get_current_time()),
-            created_at:format!("'{}'",get_current_time())
+            taker_side: format!("'{}'", engine_trade.taker_side),
+            maker_order_id: format!("'{}'", engine_trade.maker_order_id),
+            taker_order_id: format!("'{}'", engine_trade.taker_order_id),
+            updated_at: format!("'{}'", get_current_time()),
+            created_at: format!("'{}'", get_current_time()),
         };
         let trade_arr = struct2array(&trade);
-        println!("insert_trade-struct2array={:?}--",trade_arr);
+        println!("insert_trade-struct2array={:?}--", trade_arr);
         trade_arr
     }
 }

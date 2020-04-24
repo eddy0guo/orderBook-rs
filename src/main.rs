@@ -2,14 +2,13 @@ mod consume;
 mod models;
 mod util;
 
-extern crate kafka;
 extern crate env_logger;
+extern crate kafka;
 extern crate rustc_serialize;
 
-
-use std::io::BufReader;
 use kafka::consumer::{Consumer, FetchOffset, GroupOffsetStorage};
 use kafka::error::Error as KafkaError;
+use std::io::BufReader;
 
 #[macro_use]
 use postgres::{Client, NoTls};
@@ -20,13 +19,13 @@ use std::sync::Mutex;
 #[macro_use]
 extern crate lazy_static;
 
-use std::time::Instant;
 use chrono::prelude::*;
+use kafka::producer::{Producer, Record, RequiredAcks};
+use std::fmt::Write;
 use std::ptr::null;
 use std::sync::mpsc::channel;
-use std::fmt::Write;
 use std::time::Duration;
-use kafka::producer::{Producer, Record, RequiredAcks};
+use std::time::Instant;
 
 static mut available_buy_orders: Vec<models::EngineOrder> = Vec::new();
 static mut available_sell_orders: Vec<models::EngineOrder> = Vec::new();
@@ -105,7 +104,7 @@ fn connetDB() -> Option<postgres::Client> {
 }
 
 fn consumer_init(topic: String) -> Result<Consumer, KafkaError> {
-//fn  order_consumer_init() -> Result<(), KafkaError> {
+    //fn  order_consumer_init() -> Result<(), KafkaError> {
     let brokers = vec![kafka_server.to_owned()];
     let group = "mist".to_owned();
     let con = Consumer::from_hosts(brokers)
@@ -118,12 +117,11 @@ fn consumer_init(topic: String) -> Result<Consumer, KafkaError> {
 }
 
 fn producer_init() -> Result<Producer, KafkaError> {
-    let mut producer =
-        Producer::from_hosts(vec!(kafka_server.to_owned()))
-            .with_ack_timeout(Duration::from_secs(1))
-            .with_required_acks(RequiredAcks::One)
-            .create()
-            .unwrap();
+    let mut producer = Producer::from_hosts(vec![kafka_server.to_owned()])
+        .with_ack_timeout(Duration::from_secs(1))
+        .with_required_acks(RequiredAcks::One)
+        .create()
+        .unwrap();
     Ok(producer)
 }
 
@@ -149,20 +147,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-
-
-
-    let mut producer =
-        Producer::from_hosts(vec!("localhost:9092".to_owned()))
-            .with_ack_timeout(Duration::from_secs(1))
-            .with_required_acks(RequiredAcks::One)
-            .create()
-            .unwrap();
+    let mut producer = Producer::from_hosts(vec!["localhost:9092".to_owned()])
+        .with_ack_timeout(Duration::from_secs(1))
+        .with_required_acks(RequiredAcks::One)
+        .create()
+        .unwrap();
 
     let mut buf = String::with_capacity(2);
     for i in 0..10 {
         let _ = write!(&mut buf, "{}", i); // some computation of the message data to be sent
-        producer.send(&Record::from_value("my-topic", buf.as_bytes())).unwrap();
+        producer
+            .send(&Record::from_value("my-topic", buf.as_bytes()))
+            .unwrap();
         buf.clear();
     }
 

@@ -1,26 +1,25 @@
-mod flush;
 pub(crate) mod engine;
+mod flush;
 
 extern crate kafka;
 
 use std::cmp::Ord;
 use std::collections::BTreeMap;
 
-use jsonrpc_http_server::jsonrpc_core::*;
-use jsonrpc_http_server::*;
-use serde::Deserialize;
-use rustc_serialize::json;
 use super::models::*;
 use super::util::*;
-use std::env;
-use std::ops::Mul;
-use std::any::Any;
+use crate::trades;
+use chrono::offset::LocalResult;
+use chrono::prelude::*;
+use jsonrpc_http_server::jsonrpc_core::*;
+use jsonrpc_http_server::*;
 use kafka::consumer::{Consumer, FetchOffset, GroupOffsetStorage};
 use kafka::error::Error as KafkaError;
-use crate::trades;
-use chrono::prelude::*;
-use chrono::offset::LocalResult;
-
+use rustc_serialize::json;
+use serde::Deserialize;
+use std::any::Any;
+use std::env;
+use std::ops::Mul;
 
 #[derive(Deserialize, Debug)]
 struct Transfer {
@@ -89,7 +88,7 @@ pub fn engine_start() {
 pub fn flush_start() {
     loop {
         unsafe {
-            let mut trades_arr:Vec<Vec<String>> = Default::default();
+            let mut trades_arr: Vec<Vec<String>> = Default::default();
             if crate::trades.len() > 0 {
                 let pending_trades = &crate::trades;
                 for trade in pending_trades {
@@ -100,7 +99,7 @@ pub fn flush_start() {
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
                     flush::update_order(&mut taker_order, &trade);
                     flush::update_order(&mut maker_order, &trade);
-                    let trade_arr = flush::generate_trade(&taker_order,&maker_order,&trade);
+                    let trade_arr = flush::generate_trade(&taker_order, &maker_order, &trade);
                     trades_arr.push(trade_arr);
                     trades.pop();
                 }

@@ -62,8 +62,7 @@ pub struct TradeInfo {
     pub maker_order_id: String,
     pub taker_order_id: String,
     pub updated_at: String,
-    pub created_at: String
-
+    pub created_at: String,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -72,13 +71,14 @@ pub struct MarketVolume {
     pub volume: f64,
 }
 
-use std::sync::Mutex;
 use std::ptr::null;
-
+use std::sync::Mutex;
 
 pub fn get_change_rate(marketID: &str) -> f64 {
     let current_price = get_current_price_marketID(marketID);
-    if current_price == 0.0 { return 0.0; }
+    if current_price == 0.0 {
+        return 0.0;
+    }
 
     let mut yesterday_price = 0.0;
     let sql = "select cast(price as float8) from mist_trades_tmp where (current_timestamp - created_at) < '24 hours' and market_id=$1 order by created_at  limit 1";
@@ -94,11 +94,12 @@ pub fn get_change_rate(marketID: &str) -> f64 {
     for row in rows {
         yesterday_price = row.get(0);
     }
-    if yesterday_price == 0.0 { return 0.0; }
+    if yesterday_price == 0.0 {
+        return 0.0;
+    }
     let rate = (current_price - yesterday_price) / yesterday_price;
     rate.mul(100000000.0).floor() / 100000000.0
 }
-
 
 pub fn get_current_price_marketID(id: &str) -> f64 {
     let sql = "select cast(price as float8) from mist_trades_tmp where (current_timestamp - created_at) < '24 hours' and market_id=$1 order by created_at desc limit 1";
@@ -147,39 +148,42 @@ pub fn get_current_price_marketID(id: &str) -> f64 {
             await this.handlePoolError(err);
         }
 */
-pub fn insert_trade(trades: &mut Vec<Vec<String>>){
+pub fn insert_trade(trades: &mut Vec<Vec<String>>) {
     let mut query = "insert into mist_trades2 values(".to_string();
-    let mut tradesArr:Vec<&str> = Default::default();
+    let mut tradesArr: Vec<&str> = Default::default();
     let mut index = 0;
     let trades_len = trades.len();
     // INSERT INTO foo (id, name) VALUES (1, 'steven'), (2, 'timothy');",
     for trade in trades {
-            let mut temp_value = "".to_string();
-            for i in 0..trade.len() {
-                if i < trade.len()-1 {
-                    temp_value = format!("{}{},",temp_value,trade[i]);
-                } else {
-                    temp_value = format!("{}{}",temp_value,trade[i]);
-                    //temp_value =+ '$' + (i + 14 * index);
-                }
-            }
-            if (index < trades_len - 1) {
-                query = format!("{}{}),(", query, temp_value);
+        let mut temp_value = "".to_string();
+        for i in 0..trade.len() {
+            if i < trade.len() - 1 {
+                temp_value = format!("{}{},", temp_value, trade[i]);
             } else {
-                query = format!("{}{})", query, temp_value);
+                temp_value = format!("{}{}", temp_value, trade[i]);
+                //temp_value =+ '$' + (i + 14 * index);
             }
-            let mut str_trade:Vec<&str> = Default::default();
-            for item in trade {
-                str_trade.push(&*item);
-            }
-            tradesArr.append(str_trade.as_mut());
-            index += 1;
+        }
+        if (index < trades_len - 1) {
+            query = format!("{}{}),(", query, temp_value);
+        } else {
+            query = format!("{}{})", query, temp_value);
+        }
+        let mut str_trade: Vec<&str> = Default::default();
+        for item in trade {
+            str_trade.push(&*item);
+        }
+        tradesArr.append(str_trade.as_mut());
+        index += 1;
     }
 
     // let sql = "select market_id,cast(sum(amount) as float8) as volume  from mist_trades_tmp  where (current_timestamp - created_at) < '24 hours' group by market_id";
-    println!("insert_trade successful insert,sql={}---tradesarr={:#?}",query,tradesArr);
-     let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
-   // let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &tradesArr[0..tradesArr.len()]);
+    println!(
+        "insert_trade successful insert,sql={}---tradesarr={:#?}",
+        query, tradesArr
+    );
+    let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
+    // let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &tradesArr[0..tradesArr.len()]);
     if let Err(err) = result {
         println!("insert_trade failed {:?}", err);
         if !crate::restartDB() {
@@ -189,7 +193,10 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>){
         result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
     }
     let rows = result.unwrap();
-    println!("insert_trade successful insert {:?} rows,sql={}",rows,query);
+    println!(
+        "insert_trade successful insert {:?} rows,sql={}",
+        rows, query
+    );
 }
 pub fn update_order(order: &UpdateOrder) {
     // fixme:注入的写法暂时有问题，先直接拼接
@@ -197,10 +204,10 @@ pub fn update_order(order: &UpdateOrder) {
         format!("UPDATE mist_orders2 SET (available_amount,confirmed_amount,canceled_amount,pending_amount,status,updated_at)=\
                 ({},confirmed_amount,canceled_amount,{},'{}','{}') WHERE id='{}'",
                 order.available_amount, order.pending_amount, order.status, order.updated_at, order.id);
-    println!("--{}-",sql);
+    println!("--{}-", sql);
     let mut result = crate::CLIENTDB.lock().unwrap().execute(&*sql, &[]);
     if let Err(err) = result {
-        println!("update_order failed {:?} {}", err,sql);
+        println!("update_order failed {:?} {}", err, sql);
         if !crate::restartDB() {
             return;
         }
