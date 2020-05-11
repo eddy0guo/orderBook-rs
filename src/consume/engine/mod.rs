@@ -54,9 +54,8 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
     }
 }
 
-pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
+pub fn matched(mut taker_order: EngineOrder) {
     println!("start match_order = {:?}", taker_order);
-    let mut matched_orders: Vec<EngineOrder> = Vec::new();
     unsafe {
         let mut sum_matched: f64 = 0.0;
         let mut matched_amount: f64 = 0.0;
@@ -79,14 +78,9 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
                 }
             }
 
-            //println!("add_available_orders0000 = {:?}", partner_available_orders);
-            //println!(
-            //    "add_available_orders0000-aaa = {:?}",
-            //    opponents_available_orders
-            //);
             if opponents_available_orders.len() == 0 {
                 add_available_orders(partner_available_orders, taker_order.clone());
-                return matched_orders;
+                return;
             }
 
             let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
@@ -97,21 +91,17 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
                 // println!("kkk000----{}---{}----{}-", current_available_amount, taker_order.price, crate::available_buy_orders[0].price);
                 if next_available_amount > 0.0 {
                     matched_amount = current_opponents_amount;
-                    matched_orders.push(opponents_available_orders[0].clone());
                     generate_trade(&taker_order, &opponents_available_orders[0]);
                     opponents_available_orders.remove(0);
                 } else if next_available_amount < 0.0 {
                     matched_amount = current_available_amount;
                     //crate::available_sell_orders[0].amount -= current_available_amount;
-                    opponents_available_orders[0].amount =
-                        (current_opponents_amount - current_available_amount).to_fix(4);
+                    opponents_available_orders[0].amount = current_available_amount.to_fix(4);
                     let mut matched_order = opponents_available_orders[0].clone();
                     matched_order.amount = current_available_amount;
-                    matched_orders.push(matched_order.clone());
                     generate_trade(&taker_order, &opponents_available_orders[0]);
                     break;
                 } else {
-                    matched_orders.push(opponents_available_orders[0].clone());
                     generate_trade(&taker_order, &opponents_available_orders[0]);
                     opponents_available_orders.remove(0);
                     break;
@@ -128,7 +118,6 @@ pub fn matched(mut taker_order: EngineOrder) -> Vec<EngineOrder> {
             sum_matched = (sum_matched + matched_amount).to_fix(4);
         }
     }
-    matched_orders
 }
 
 pub fn generate_trade(taker_order: &EngineOrder, maker_order: &EngineOrder) {
