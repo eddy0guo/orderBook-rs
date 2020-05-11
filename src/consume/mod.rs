@@ -89,17 +89,12 @@ pub fn flush_start() {
         unsafe {
             let mut trades_arr: Vec<Vec<String>> = Default::default();
             if crate::trades.len() > 0 {
-                println!(
-                    "current transaction_id is {},and start flush engine result {:?}",
-                    crate::transaction_id,
-                    crate::trades
-                );
+                println!("start flush engine result {:?}", crate::trades);
                 let pending_trades = &crate::trades;
                 let mut index = 0;
-                let current_transaction_id = crate::transaction_id;
+                let mut current_transaction_id = crate::models::get_max_transaction_id();
                 for trade in pending_trades {
-                    let times = index / 100 + 1;
-                    crate::transaction_id = current_transaction_id + times;
+                    current_transaction_id += index / 100 + 1;
                     let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
                     println!(
@@ -112,7 +107,7 @@ pub fn flush_start() {
                         &taker_order,
                         &maker_order,
                         &trade,
-                        crate::transaction_id,
+                        current_transaction_id,
                     );
                     println!("generate_trade {:?}", trade_arr);
                     trades_arr.push(trade_arr);
@@ -120,7 +115,7 @@ pub fn flush_start() {
                     index += 1;
                 }
                 println!("insert trades_arr {:#?}", trades_arr);
-                insert_trade(&mut trades_arr);
+                insert_trade2(&mut trades_arr);
                 continue;
             }
             //println!("3333----{:?}{:?}---33", taker_order, maker_order);

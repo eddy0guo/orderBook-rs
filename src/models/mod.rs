@@ -76,7 +76,7 @@ use std::sync::Mutex;
 
 pub fn get_max_transaction_id() -> i32 {
     let sql = format!(
-        "select transaction_id  from {}  order by created_at desc limit 1",
+        "select transaction_id  from {} where status!='matched' order by created_at desc limit 1",
         crate::READ_TRADE_TABLE
     );
     let mut transaction_id: i32 = 0;
@@ -96,7 +96,12 @@ pub fn get_max_transaction_id() -> i32 {
     transaction_id
 }
 
-pub fn insert_trade(trades: &mut Vec<Vec<String>>) {
+pub fn insert_trade2(trades: &mut Vec<Vec<String>>) {
+    insert_trade(trades,crate::WRITE_TRADE_TABLE);
+    insert_trade(trades,crate::WRITE_TRADE_TMP_TABLE);
+}
+
+pub fn insert_trade(trades: &mut Vec<Vec<String>>,trade_table: &str) {
     let mut query = format!("insert into {} values(", crate::WRITE_TRADE_TABLE);
     let mut tradesArr: Vec<&str> = Default::default();
     let mut index = 0;

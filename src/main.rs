@@ -34,12 +34,13 @@ static mut available_sell_orders: Vec<models::EngineOrder> = Vec::new();
 static mut trades: Vec<consume::engine::EngineTrade> = Vec::new();
 static mut market_id: String = String::new();
 static kafka_server: &str = "localhost:9092";
-static mut transaction_id: i32 = 0;
 
 const READ_ORDER_TABLE: &str = "mist_orders2";
 const WRITE_ORDER_TABLE: &str = "mist_orders2";
-const READ_TRADE_TABLE: &str = "mist_trades2";
+const READ_TRADE_TABLE: &str = "mist_trades_tmp";
 const WRITE_TRADE_TABLE: &str = "mist_trades2";
+const WRITE_TRADE_TMP_TABLE: &str = "mist_trades_tmp2";
+
 
 lazy_static! {
     static ref CLIENTDB: Mutex<postgres::Client> = Mutex::new({
@@ -138,8 +139,6 @@ fn init(market: &str) {
             available_sell_orders.len(),
             get_current_time()
         );
-        transaction_id = get_max_transaction_id();
-        println!("finished loading data at {}", get_current_time());
     }
 }
 
