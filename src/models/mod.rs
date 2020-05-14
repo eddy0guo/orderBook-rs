@@ -44,7 +44,7 @@ pub struct EngineOrder {
     pub price: f64,
     pub amount: f64,
     pub side: String,
-    created_at: String,
+    pub created_at: String,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -65,6 +65,26 @@ pub struct TradeInfo {
     pub created_at: String,
 }
 
+#[derive(Deserialize, RustcDecodable,Debug, Default)]
+pub struct OrderInfo {
+    pub id: String,
+    trader_address: String,
+    market_id: String,
+    pub side: String,
+    pub price: f64,
+    pub amount: f64,
+    pub status: String,
+    //r#
+    r#type: String,
+    pub available_amount: f64,
+    confirmed_amount: f64,
+    canceled_amount: f64,
+    pub pending_amount: f64,
+    updated_at: String,
+    pub created_at: String,
+    signature: String,
+    expire_at: u64,
+}
 #[derive(Deserialize, Debug, Default)]
 pub struct MarketVolume {
     pub marketID: String,
@@ -102,7 +122,7 @@ pub fn insert_trade2(trades: &mut Vec<Vec<String>>) {
 }
 
 pub fn insert_trade(trades: &mut Vec<Vec<String>>,trade_table: &str) {
-    let mut query = format!("insert into {} values(", crate::WRITE_TRADE_TABLE);
+    let mut query = format!("insert into {} values(", trade_table);
     let mut tradesArr: Vec<&str> = Default::default();
     let mut index = 0;
     let trades_len = trades.len();

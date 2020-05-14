@@ -60,11 +60,20 @@ pub fn engine_start() {
                 let mut message = String::new();
                 let message = String::from_utf8_lossy(m.value);
                 let mut decoded_message: EngineOrder = Default::default();
-                if let Ok(tmp) = json::decode(&message) {
-                    decoded_message = tmp;
-                } else {
-                    println!("decode order message failed");
-                }
+                let mut decoded_order: OrderInfo = Default::default();
+                decoded_order = json::decode(&message).unwrap_or_else(|err| {
+                    println!("decode message error {:?}",err);
+                    decoded_order
+                });
+
+                decoded_message = EngineOrder{
+                    id: decoded_order.id,
+                    price:decoded_order.price,
+                    amount:decoded_order.amount,
+                    side:decoded_order.side,
+                    created_at:decoded_order.created_at,
+                };
+
                 decoded_message.price = decoded_message.price.to_fix(4);
                 decoded_message.amount = decoded_message.amount.to_fix(4);
                 //println!("new order--hello- {:?},---{}--{}",decoded_message,message,decoded_message.amount.to_fix(4));
@@ -119,7 +128,7 @@ pub fn flush_start() {
                 continue;
             }
             //println!("3333----{:?}{:?}---33", taker_order, maker_order);
-            println!("have no engine trade {:?}", crate::trades);
+            //println!("have no engine trade {:?}", crate::trades);
             std::thread::sleep(std::time::Duration::new(0, 1000));
         }
     }

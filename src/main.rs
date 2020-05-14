@@ -146,7 +146,7 @@ fn init(market: &str) {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     for argument in env::args() {
-        if argument.contains("--market_id=") {
+        if argument.contains("--market-id=") {
             let market_option: Vec<&str> = argument.as_str().split('=').collect();
             init(market_option[1].clone());
             unsafe {
