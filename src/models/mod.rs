@@ -6,6 +6,7 @@ use rustc_serialize::json;
 
 use serde::Deserialize;
 use std::ops::Mul;
+
 #[derive(Deserialize, Debug, Default)]
 pub struct UpdateOrder {
     pub id: String,
@@ -46,7 +47,7 @@ pub struct TradeInfo {
     pub created_at: String,
 }
 
-#[derive(Deserialize, RustcDecodable,Debug, Default,Clone)]
+#[derive(Deserialize, RustcDecodable, Debug, Default, Clone)]
 pub struct OrderInfo {
     pub id: String,
     pub trader_address: String,
@@ -66,6 +67,7 @@ pub struct OrderInfo {
     pub signature: String,
     pub expire_at: u64,
 }
+
 #[derive(Deserialize, Debug, Default)]
 pub struct MarketVolume {
     pub marketID: String,
@@ -98,11 +100,11 @@ pub fn get_max_transaction_id() -> i32 {
 }
 
 pub fn insert_trade2(trades: &mut Vec<Vec<String>>) {
-    insert_trade(trades,crate::WRITE_TRADE_TABLE);
-    insert_trade(trades,crate::WRITE_TRADE_TMP_TABLE);
+    insert_trade(trades, crate::WRITE_TRADE_TABLE);
+    insert_trade(trades, crate::WRITE_TRADE_TMP_TABLE);
 }
 
-pub fn insert_trade(trades: &mut Vec<Vec<String>>,trade_table: &str) {
+pub fn insert_trade(trades: &mut Vec<Vec<String>>, trade_table: &str) {
     let mut query = format!("insert into {} values(", trade_table);
     let mut tradesArr: Vec<&str> = Default::default();
     let mut index = 0;
@@ -138,7 +140,7 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>,trade_table: &str) {
     let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
     // let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &tradesArr[0..tradesArr.len()]);
     if let Err(err) = result {
-        println!("insert_trade failed {:?}", err);
+        println!("insert_trade {} failed {:?}", trade_table, err);
         if !crate::restartDB() {
             return;
         }
@@ -153,19 +155,13 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>,trade_table: &str) {
 }
 
 
-
-
-
-
-
-
 pub fn insert_order2(trades: &mut Vec<String>) {
-    println!("start insert {:?}",trades);
-    insert_order(trades,crate::WRITE_ORDER_TABLE);
-    insert_order(trades,crate::WRITE_ORDER_TMP_TABLE);
+    println!("start insert {:?}", trades);
+    insert_order(trades, crate::WRITE_ORDER_TABLE);
+    insert_order(trades, crate::WRITE_ORDER_TMP_TABLE);
 }
 
-pub fn insert_order(order_info: &mut Vec<String>,trade_table: &str) {
+pub fn insert_order(order_info: &mut Vec<String>, trade_table: &str) {
     let mut query = format!("insert into {} values(", trade_table);
     // fixme:注入的写法暂时有问题，先直接拼接
     for i in 0..order_info.len() {
@@ -180,7 +176,7 @@ pub fn insert_order(order_info: &mut Vec<String>,trade_table: &str) {
     let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
     // let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &tradesArr[0..tradesArr.len()]);
     if let Err(err) = result {
-        println!("insert_order {} failed {:?}", err,trade_table);
+        println!("insert_order {} failed {:?}", err, trade_table);
         if !crate::restartDB() {
             return;
         }
@@ -195,16 +191,12 @@ pub fn insert_order(order_info: &mut Vec<String>,trade_table: &str) {
 }
 
 
-
-
-
-
 pub fn update_order(order: &UpdateOrder) {
     // fixme:注入的写法暂时有问题，先直接拼接
     let sql =
         format!("UPDATE {} SET (available_amount,confirmed_amount,canceled_amount,pending_amount,status,updated_at)=\
                 ({},confirmed_amount,canceled_amount,{},'{}','{}') WHERE id='{}'",
-                crate::WRITE_ORDER_TABLE,order.available_amount, order.pending_amount, order.status, order.updated_at, order.id);
+                crate::WRITE_ORDER_TABLE, order.available_amount, order.pending_amount, order.status, order.updated_at, order.id);
     println!("--{}-", sql);
     let mut result = crate::CLIENTDB.lock().unwrap().execute(&*sql, &[]);
     if let Err(err) = result {
@@ -261,7 +253,7 @@ pub fn list_available_orders(side: &str, channel: &str) -> Vec<EngineOrder> {
         sort_by = "DESC";
     }
     let sql = format!("select id,cast(price as float8),cast(available_amount as float8),side,cast(created_at as text) from {} \
-    where market_id='{}' and available_amount>0 and side='{}' order by price {} ,created_at ASC", crate::READ_ORDER_TABLE,channel, side, sort_by);
+    where market_id='{}' and available_amount>0 and side='{}' order by price {} ,created_at ASC", crate::READ_ORDER_TABLE, channel, side, sort_by);
     let mut orders: Vec<EngineOrder> = Vec::new();
     let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
     if let Err(err) = result {

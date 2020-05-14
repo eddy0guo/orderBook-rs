@@ -45,20 +45,20 @@ pub fn struct2array<T: Any + Debug>(value: &T) -> Vec<String> {
     let value = value as &Any;
     match value.downcast_ref::<TradeInfo>() {
         Some(trade) => {
-            trade_vec.push(trade.id.to_string());
+            trade_vec.push(trade.id.string4sql());
             trade_vec.push(trade.transaction_id.to_string());
-            trade_vec.push(trade.transaction_hash.to_string());
-            trade_vec.push(trade.status.to_string());
-            trade_vec.push(trade.market_id.to_string());
-            trade_vec.push(trade.maker.to_string());
-            trade_vec.push(trade.taker.to_string());
+            trade_vec.push(trade.transaction_hash.string4sql());
+            trade_vec.push(trade.status.string4sql());
+            trade_vec.push(trade.market_id.string4sql());
+            trade_vec.push(trade.maker.string4sql());
+            trade_vec.push(trade.taker.string4sql());
             trade_vec.push(trade.price.to_string());
             trade_vec.push(trade.amount.to_string());
-            trade_vec.push(trade.taker_side.to_string());
-            trade_vec.push(trade.maker_order_id.to_string());
-            trade_vec.push(trade.taker_order_id.to_string());
-            trade_vec.push(trade.updated_at.to_string());
-            trade_vec.push(trade.created_at.to_string());
+            trade_vec.push(trade.taker_side.string4sql());
+            trade_vec.push(trade.maker_order_id.string4sql());
+            trade_vec.push(trade.taker_order_id.string4sql());
+            trade_vec.push(trade.updated_at.string4sql());
+            trade_vec.push(trade.created_at.string4sql());
         }
         None => (),
     };

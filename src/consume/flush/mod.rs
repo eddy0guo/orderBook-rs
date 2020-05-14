@@ -58,20 +58,20 @@ pub fn generate_trade(
     //fixme::默认值设计
     unsafe {
         let mut trade = TradeInfo {
-            id: format!("'{}'", 0),
+            id: "".to_string(),
             transaction_id,
-            transaction_hash: "''".to_string(),
-            status: format!("'{}'", "matched"),
-            market_id: format!("'{}'", crate::market_id),
-            maker: format!("'{}'", maker_order.trader_address),
-            taker: format!("'{}'", taker_order.trader_address),
+            transaction_hash: "".to_string(),
+            status: "matched".to_string(),
+            market_id: crate::market_id.clone(),
+            maker: maker_order.trader_address.clone(),
+            taker: taker_order.trader_address.clone(),
             price: engine_trade.price,
             amount: engine_trade.amount,
-            taker_side: format!("'{}'", engine_trade.taker_side),
-            maker_order_id: format!("'{}'", engine_trade.maker_order_id),
-            taker_order_id: format!("'{}'", engine_trade.taker_order.id),
-            updated_at: format!("'{}'", get_current_time()),
-            created_at: format!("'{}'", get_current_time()),
+            taker_side: engine_trade.taker_side.clone(),
+            maker_order_id: engine_trade.maker_order_id.clone(),
+            taker_order_id: engine_trade.taker_order.id.clone(),
+            updated_at: get_current_time(),
+            created_at: get_current_time(),
         };
         let data = format!(
             "{}{}{}{}{}{}{}{}{}",
@@ -86,7 +86,7 @@ pub fn generate_trade(
             trade.created_at
         );
         let txid = sha256(data);
-        trade.id = format!("'{}'", txid);
+        trade.id = txid;
         let trade_arr = struct2array(&trade);
         trade_arr
     }
