@@ -37,7 +37,9 @@ static kafka_server: &str = "localhost:9092";
 
 const READ_ORDER_TABLE: &str = "mist_orders2";
 const WRITE_ORDER_TABLE: &str = "mist_orders2";
-const READ_TRADE_TABLE: &str = "mist_trades_tmp";
+const WRITE_ORDER_TMP_TABLE: &str = "mist_orders_tmp2";
+
+const READ_TRADE_TABLE: &str = "mist_trades_tmp2";
 const WRITE_TRADE_TABLE: &str = "mist_trades2";
 const WRITE_TRADE_TMP_TABLE: &str = "mist_trades_tmp2";
 

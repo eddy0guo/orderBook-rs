@@ -16,7 +16,7 @@ use std::time::Duration;
 
 #[derive(Deserialize, Debug)]
 pub struct EngineTrade {
-    pub taker_order_id: String,
+    pub taker_order: OrderInfo,
     pub maker_order_id: String,
     pub taker_side: String,
     pub amount: f64,
@@ -54,13 +54,13 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
     }
 }
 
-pub fn matched(mut taker_order: EngineOrder) {
+pub fn matched(mut taker_order: OrderInfo) {
     println!("start match_order = {:?}", taker_order);
     unsafe {
         let mut sum_matched: f64 = 0.0;
         let mut matched_amount: f64 = 0.0;
         let mut index = 0;
-        loop {
+            println!("loop index {}", index);
             let mut opponents_available_orders = &mut Default::default();
             let mut partner_available_orders = &mut Default::default();
             let mut price_gap = 0.0;
@@ -79,11 +79,25 @@ pub fn matched(mut taker_order: EngineOrder) {
             }
 
             if opponents_available_orders.len() == 0 {
-                add_available_orders(partner_available_orders, taker_order.clone());
+                let mut order_info = crate::util::struct2array(&taker_order);
+                insert_order2(&mut order_info);
+                let taker_order2 = EngineOrder{
+                    id: taker_order.id,
+                    price:taker_order.price,
+                    amount:taker_order.amount,
+                    side:taker_order.side,
+                    created_at:taker_order.created_at,
+                };
+                add_available_orders(partner_available_orders, taker_order2);
                 return;
             }
+            loop{
 
-            let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
+                println!("loop indexxxxx");
+
+
+
+                let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
             let current_available_amount = (taker_order.amount - sum_matched).to_fix(4);
             let mut next_available_amount =
                 (current_available_amount - current_opponents_amount).to_fix(4);
@@ -109,7 +123,14 @@ pub fn matched(mut taker_order: EngineOrder) {
             } else if current_available_amount > 0.0 && price_gap > 0.0 {
                 taker_order.amount = current_available_amount;
                 // println!("kkk2222---{:?}---{}-", taker_order, current_available_amount);
-                add_available_orders(partner_available_orders, taker_order);
+               let taker_order2 = EngineOrder{
+                   id: taker_order.id,
+                   price:taker_order.price,
+                   amount:taker_order.amount,
+                   side:taker_order.side,
+                   created_at:taker_order.created_at,
+               };
+                add_available_orders(partner_available_orders, taker_order2);
                 break;
             } else {
                 break;
@@ -117,10 +138,11 @@ pub fn matched(mut taker_order: EngineOrder) {
             println!("match result {:?}", crate::trades);
             sum_matched = (sum_matched + matched_amount).to_fix(4);
         }
+        println!("finished match_order");
     }
 }
 
-pub fn generate_trade(taker_order: &EngineOrder, maker_order: &EngineOrder) {
+pub fn generate_trade(taker_order: &OrderInfo, maker_order: &EngineOrder) {
     let taker_order2 = taker_order.clone();
     let maker_order2 = maker_order.clone();
 
@@ -129,10 +151,12 @@ pub fn generate_trade(taker_order: &EngineOrder, maker_order: &EngineOrder) {
             market_id: crate::market_id.clone(),
             price: maker_order2.price,
             amount: maker_order2.amount,
-            taker_side: taker_order2.side,
+            taker_side: taker_order2.side.clone(),
             maker_order_id: maker_order2.id,
-            taker_order_id: taker_order2.id,
+            taker_order: taker_order2.clone(),
         };
+        // 这里加上takerorder字段
         crate::trades.push(trade);
+        println!("finished push trades {:?}",crate::trades);
     }
 }

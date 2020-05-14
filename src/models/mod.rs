@@ -6,25 +6,6 @@ use rustc_serialize::json;
 
 use serde::Deserialize;
 use std::ops::Mul;
-/*
- id               | text                        |          | not null |
- trader_address   | text                        |          |          |
- market_id        | text                        |          |          |
- side             | text                        |          |          |
- price            | numeric(32,8)               |          |          |
- amount           | numeric(32,8)               |          |          |
- status           | text                        |          |          |
- type             | text                        |          |          |
- available_amount | numeric(32,8)               |          |          |
- confirmed_amount | numeric(32,8)               |          |          |
- canceled_amount  | numeric(32,8)               |          |          |
- pending_amount   | numeric(32,8)               |          |          |
- updated_at       | timestamp without time zone |          |          |
- created_at       | timestamp without time zone |          |          |
- signature        | text                        |          |          |
- expire_at        | bigint                      |          |          |
-*/
-
 #[derive(Deserialize, Debug, Default)]
 pub struct UpdateOrder {
     pub id: String,
@@ -65,25 +46,25 @@ pub struct TradeInfo {
     pub created_at: String,
 }
 
-#[derive(Deserialize, RustcDecodable,Debug, Default)]
+#[derive(Deserialize, RustcDecodable,Debug, Default,Clone)]
 pub struct OrderInfo {
     pub id: String,
-    trader_address: String,
-    market_id: String,
+    pub trader_address: String,
+    pub market_id: String,
     pub side: String,
     pub price: f64,
     pub amount: f64,
     pub status: String,
     //r#
-    r#type: String,
+    pub r#type: String,
     pub available_amount: f64,
-    confirmed_amount: f64,
-    canceled_amount: f64,
+    pub confirmed_amount: f64,
+    pub canceled_amount: f64,
     pub pending_amount: f64,
-    updated_at: String,
+    pub updated_at: String,
     pub created_at: String,
-    signature: String,
-    expire_at: u64,
+    pub signature: String,
+    pub expire_at: u64,
 }
 #[derive(Deserialize, Debug, Default)]
 pub struct MarketVolume {
@@ -170,6 +151,54 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>,trade_table: &str) {
         rows, query
     );
 }
+
+
+
+
+
+
+
+
+pub fn insert_order2(trades: &mut Vec<String>) {
+    println!("start insert {:?}",trades);
+    insert_order(trades,crate::WRITE_ORDER_TABLE);
+    insert_order(trades,crate::WRITE_ORDER_TMP_TABLE);
+}
+
+pub fn insert_order(order_info: &mut Vec<String>,trade_table: &str) {
+    let mut query = format!("insert into {} values(", trade_table);
+    // fixme:注入的写法暂时有问题，先直接拼接
+    for i in 0..order_info.len() {
+        if i < order_info.len() - 1 {
+            query = format!("{}{},", query, order_info[i]);
+        } else {
+            query = format!("{}{})", query, order_info[i]);
+            //temp_value =+ '$' + (i + 14 * index);
+        }
+    }
+    println!("insert_trade successful insert,sql={}", query);
+    let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
+    // let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &tradesArr[0..tradesArr.len()]);
+    if let Err(err) = result {
+        println!("insert_order {} failed {:?}", err,trade_table);
+        if !crate::restartDB() {
+            return;
+        }
+        //&[&bar, &baz],
+        result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
+    }
+    let rows = result.unwrap();
+    println!(
+        "insert_trade successful insert {:?} rows,sql={}",
+        rows, query
+    );
+}
+
+
+
+
+
+
 pub fn update_order(order: &UpdateOrder) {
     // fixme:注入的写法暂时有问题，先直接拼接
     let sql =

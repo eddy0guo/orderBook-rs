@@ -14,7 +14,7 @@ use std::env;
 use std::ops::Mul;
 
 //  "pending","partial_filled","cancled","full_filled" or ""
-pub fn update_order(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool {
+pub fn update_maker(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool {
     // todo:更新redis余额
     order.available_amount = (order.available_amount - engine_trade.amount).to_fix(4);
     order.pending_amount = (order.pending_amount + engine_trade.amount).to_fix(4);
@@ -30,19 +30,32 @@ pub fn update_order(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool
     true
 }
 
+pub fn insert_taker(taker_order: &mut OrderInfo, engine_trade: &EngineTrade) -> bool {
+    println!("start insert_taker");
+    // todo:更新redis余额
+    taker_order.available_amount = (taker_order.available_amount - engine_trade.amount).to_fix(4);
+    taker_order.pending_amount = (taker_order.pending_amount + engine_trade.amount).to_fix(4);
+    taker_order.updated_at = get_current_time();
+    if taker_order.available_amount > 0.0 && taker_order.available_amount < taker_order.amount {
+        taker_order.status = "partial_filled".to_string();
+    } else if taker_order.available_amount == 0.0 {
+        taker_order.status = "full_filled".to_string();
+    } else {
+        println!("Other circumstances that were not considered, or should not have occurred");
+    }
+    let mut order_info = struct2array(taker_order);
+    crate::models::insert_order2(&mut order_info);
+    true
+}
+
 pub fn generate_trade(
-    taker_order: &UpdateOrder,
+    taker_order: &OrderInfo,
     maker_order: &UpdateOrder,
     engine_trade: &EngineTrade,
     transaction_id: i32,
 ) -> Vec<String> {
     // todo:更新redis余额
     //fixme::默认值设计
-    println!(
-        "generate a trade={:?}---taker_orderidformat-{}-",
-        engine_trade,
-        format!("'{}'", engine_trade.taker_order_id)
-    );
     unsafe {
         let mut trade = TradeInfo {
             id: format!("'{}'", 0),
@@ -56,7 +69,7 @@ pub fn generate_trade(
             amount: engine_trade.amount,
             taker_side: format!("'{}'", engine_trade.taker_side),
             maker_order_id: format!("'{}'", engine_trade.maker_order_id),
-            taker_order_id: format!("'{}'", engine_trade.taker_order_id),
+            taker_order_id: format!("'{}'", engine_trade.taker_order.id),
             updated_at: format!("'{}'", get_current_time()),
             created_at: format!("'{}'", get_current_time()),
         };

@@ -1,4 +1,4 @@
-use crate::models::TradeInfo;
+use crate::models::{TradeInfo, OrderInfo};
 use chrono::offset::LocalResult;
 use chrono::prelude::*;
 use num::ToPrimitive;
@@ -14,6 +14,10 @@ pub trait MathOperation {
     fn to_fix(&self, precision: u32) -> f64;
 }
 
+pub trait FormatSql {
+    fn string4sql(&self) -> String;
+}
+
 impl MathOperation for f64 {
     fn to_fix(&self, precision: u32) -> f64 {
         let times = 10_u32.pow(precision);
@@ -22,6 +26,12 @@ impl MathOperation for f64 {
         let decimal_number = Decimal::new(real_number as i64, precision);
         let scaled = decimal_number.to_f64().unwrap();
         scaled
+    }
+}
+
+impl FormatSql for String {
+    fn string4sql(&self) -> String {
+        format!("'{}'", self)
     }
 }
 
@@ -49,6 +59,28 @@ pub fn struct2array<T: Any + Debug>(value: &T) -> Vec<String> {
             trade_vec.push(trade.taker_order_id.to_string());
             trade_vec.push(trade.updated_at.to_string());
             trade_vec.push(trade.created_at.to_string());
+        }
+        None => (),
+    };
+    match value.downcast_ref::<OrderInfo>() {
+        Some(trade) => {
+            trade_vec.push(trade.id.string4sql());
+            trade_vec.push(trade.trader_address.string4sql());
+            trade_vec.push(trade.market_id.string4sql());
+            trade_vec.push(trade.side.string4sql());
+            trade_vec.push(trade.price.to_string());
+            trade_vec.push(trade.amount.to_string());
+            trade_vec.push(trade.status.string4sql());
+            trade_vec.push(trade.r#type.string4sql());
+            trade_vec.push(trade.available_amount.to_string());
+            trade_vec.push(trade.confirmed_amount.to_string());
+            trade_vec.push(trade.canceled_amount.to_string());
+            trade_vec.push(trade.pending_amount.to_string());
+            trade_vec.push(trade.updated_at.string4sql());
+            trade_vec.push(trade.created_at.string4sql());
+            trade_vec.push(trade.signature.string4sql());
+            trade_vec.push(trade.expire_at.to_string());
+
         }
         None => (),
     };

@@ -66,19 +66,11 @@ pub fn engine_start() {
                     decoded_order
                 });
 
-                decoded_message = EngineOrder{
-                    id: decoded_order.id,
-                    price:decoded_order.price,
-                    amount:decoded_order.amount,
-                    side:decoded_order.side,
-                    created_at:decoded_order.created_at,
-                };
-
-                decoded_message.price = decoded_message.price.to_fix(4);
-                decoded_message.amount = decoded_message.amount.to_fix(4);
+                decoded_order.price = decoded_order.price.to_fix(4);
+                decoded_order.amount = decoded_order.amount.to_fix(4);
                 //println!("new order--hello- {:?},---{}--{}",decoded_message,message,decoded_message.amount.to_fix(4));
                 // todo:checkout available amount
-                engine::matched(decoded_message);
+                engine::matched(decoded_order);
                 // println!("{}:{}@{}: {:?}", ms.topic(), ms.partition(), m.offset, message);
             }
             let _ = crate::ORDER_CONSUMER.lock().unwrap().consume_messageset(ms);
@@ -104,14 +96,15 @@ pub fn flush_start() {
                 let mut current_transaction_id = crate::models::get_max_transaction_id();
                 for trade in pending_trades {
                     current_transaction_id += index / 100 + 1;
-                    let mut taker_order = crate::models::get_order(&trade.taker_order_id);
+                    //let mut taker_order = crate::models::get_order(&trade.taker_order_id);
+                    let mut taker_order = trade.taker_order.clone();
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
                     println!(
                         "taker_order={:?},maker_order={:?}",
                         taker_order, maker_order
                     );
-                    flush::update_order(&mut taker_order, &trade);
-                    flush::update_order(&mut maker_order, &trade);
+                    flush::insert_taker(&mut taker_order, &trade);
+                    flush::update_maker(&mut maker_order, &trade);
                     let trade_arr = flush::generate_trade(
                         &taker_order,
                         &maker_order,
