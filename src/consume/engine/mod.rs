@@ -60,44 +60,41 @@ pub fn matched(mut taker_order: OrderInfo) {
         let mut sum_matched: f64 = 0.0;
         let mut matched_amount: f64 = 0.0;
         let mut index = 0;
-            println!("loop index {}", index);
-            let mut opponents_available_orders = &mut Default::default();
-            let mut partner_available_orders = &mut Default::default();
-            let mut price_gap = 0.0;
-            if taker_order.side == "sell" {
-                opponents_available_orders = &mut crate::available_buy_orders;
-                partner_available_orders = &mut crate::available_sell_orders;
-                if opponents_available_orders.len() != 0 {
-                    price_gap = taker_order.price - opponents_available_orders[0].price;
-                }
-            } else {
-                opponents_available_orders = &mut crate::available_sell_orders;
-                partner_available_orders = &mut crate::available_buy_orders;
-                if opponents_available_orders.len() != 0 {
-                    price_gap = opponents_available_orders[0].price - taker_order.price;
-                }
+        println!("loop index {}", index);
+        let mut opponents_available_orders = &mut Default::default();
+        let mut partner_available_orders = &mut Default::default();
+        let mut price_gap = 0.0;
+        if taker_order.side == "sell" {
+            opponents_available_orders = &mut crate::available_buy_orders;
+            partner_available_orders = &mut crate::available_sell_orders;
+            if opponents_available_orders.len() != 0 {
+                price_gap = taker_order.price - opponents_available_orders[0].price;
             }
-
-            if opponents_available_orders.len() == 0 {
-                let mut order_info = crate::util::struct2array(&taker_order);
-                insert_order2(&mut order_info);
-                let taker_order2 = EngineOrder{
-                    id: taker_order.id,
-                    price:taker_order.price,
-                    amount:taker_order.amount,
-                    side:taker_order.side,
-                    created_at:taker_order.created_at,
-                };
-                add_available_orders(partner_available_orders, taker_order2);
-                return;
+        } else {
+            opponents_available_orders = &mut crate::available_sell_orders;
+            partner_available_orders = &mut crate::available_buy_orders;
+            if opponents_available_orders.len() != 0 {
+                price_gap = opponents_available_orders[0].price - taker_order.price;
             }
-            loop{
+        }
 
-                println!("loop indexxxxx");
+        if opponents_available_orders.len() == 0 {
+            let mut order_info = crate::util::struct2array(&taker_order);
+            insert_order2(&mut order_info);
+            let taker_order2 = EngineOrder {
+                id: taker_order.id,
+                price: taker_order.price,
+                amount: taker_order.amount,
+                side: taker_order.side,
+                created_at: taker_order.created_at,
+            };
+            add_available_orders(partner_available_orders, taker_order2);
+            return;
+        }
+        loop {
+            println!("loop indexxxxx");
 
-
-
-                let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
+            let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
             let current_available_amount = (taker_order.amount - sum_matched).to_fix(4);
             let mut next_available_amount =
                 (current_available_amount - current_opponents_amount).to_fix(4);
@@ -123,13 +120,13 @@ pub fn matched(mut taker_order: OrderInfo) {
             } else if current_available_amount > 0.0 && price_gap > 0.0 {
                 taker_order.amount = current_available_amount;
                 // println!("kkk2222---{:?}---{}-", taker_order, current_available_amount);
-               let taker_order2 = EngineOrder{
-                   id: taker_order.id,
-                   price:taker_order.price,
-                   amount:taker_order.amount,
-                   side:taker_order.side,
-                   created_at:taker_order.created_at,
-               };
+                let taker_order2 = EngineOrder {
+                    id: taker_order.id,
+                    price: taker_order.price,
+                    amount: taker_order.amount,
+                    side: taker_order.side,
+                    created_at: taker_order.created_at,
+                };
                 add_available_orders(partner_available_orders, taker_order2);
                 break;
             } else {
@@ -157,6 +154,6 @@ pub fn generate_trade(taker_order: &OrderInfo, maker_order: &EngineOrder) {
         };
         // 这里加上takerorder字段
         crate::trades.push(trade);
-        println!("finished push trades {:?}",crate::trades);
+        println!("finished push trades {:?}", crate::trades);
     }
 }

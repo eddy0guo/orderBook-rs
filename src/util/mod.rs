@@ -1,4 +1,4 @@
-use crate::models::{TradeInfo, OrderInfo};
+use crate::models::{OrderInfo, TradeInfo};
 use chrono::offset::LocalResult;
 use chrono::prelude::*;
 use num::ToPrimitive;
@@ -80,7 +80,6 @@ pub fn struct2array<T: Any + Debug>(value: &T) -> Vec<String> {
             trade_vec.push(trade.created_at.string4sql());
             trade_vec.push(trade.signature.string4sql());
             trade_vec.push(trade.expire_at.to_string());
-
         }
         None => (),
     };

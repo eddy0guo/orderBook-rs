@@ -154,7 +154,6 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>, trade_table: &str) {
     );
 }
 
-
 pub fn insert_order2(trades: &mut Vec<String>) {
     println!("start insert {:?}", trades);
     insert_order(trades, crate::WRITE_ORDER_TABLE);
@@ -189,7 +188,6 @@ pub fn insert_order(order_info: &mut Vec<String>, trade_table: &str) {
         rows, query
     );
 }
-
 
 pub fn update_order(order: &UpdateOrder) {
     // fixme:注入的写法暂时有问题，先直接拼接

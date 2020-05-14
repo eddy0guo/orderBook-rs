@@ -62,7 +62,7 @@ pub fn engine_start() {
                 let mut decoded_message: EngineOrder = Default::default();
                 let mut decoded_order: OrderInfo = Default::default();
                 decoded_order = json::decode(&message).unwrap_or_else(|err| {
-                    println!("decode message error {:?}",err);
+                    println!("decode message error {:?}", err);
                     decoded_order
                 });
 

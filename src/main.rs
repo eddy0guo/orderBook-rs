@@ -43,7 +43,6 @@ const READ_TRADE_TABLE: &str = "mist_trades_tmp2";
 const WRITE_TRADE_TABLE: &str = "mist_trades2";
 const WRITE_TRADE_TMP_TABLE: &str = "mist_trades_tmp2";
 
-
 lazy_static! {
     static ref CLIENTDB: Mutex<postgres::Client> = Mutex::new({
         println!("lazy_static--postgres");
