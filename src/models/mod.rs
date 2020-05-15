@@ -99,6 +99,41 @@ pub fn get_max_transaction_id() -> i32 {
     transaction_id
 }
 
+/**
+
+async list_matched_trades(): Promise<number> {
+const [err, result]: [any, any] = await to(this.queryWithLog('SELECT count(1) FROM mist_trades_tmp where status=\'matched\''));
+if (err) {
+console.error('list matched trades failed', err);
+await this.handlePoolError(err);
+}
+return result.rows[0].count;
+
+}
+**/
+
+
+pub fn count_matched_trades() -> i32 {
+    let sql = format!("SELECT  cast(count(1) as int4) FROM {} where status=\'matched\'", crate::READ_TRADE_TABLE);
+    let mut num: i32 = 0;
+    let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
+
+    if let Err(err) = result {
+        println!("get_max_transaction_id failed {:?}", err);
+        if !crate::restartDB() {
+            return num;
+        }
+        result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
+    }
+    let rows = result.unwrap();
+    for row in rows {
+        num = row.get(0);
+    }
+    num
+}
+
+
+
 pub fn insert_trade2(trades: &mut Vec<Vec<String>>) {
     insert_trade(trades, crate::WRITE_TRADE_TABLE);
     insert_trade(trades, crate::WRITE_TRADE_TMP_TABLE);
@@ -223,7 +258,7 @@ pub fn get_order(id: &str) -> UpdateOrder {
     let mut order: UpdateOrder = Default::default();
     let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[&id]);
     if let Err(err) = result {
-        println!("UpdateOrder failed {:?}", err);
+        println!("get_order failed {:?},sql={}", err,sql);
         if !crate::restartDB() {
             return order;
         }

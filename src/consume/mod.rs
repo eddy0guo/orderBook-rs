@@ -94,8 +94,15 @@ pub fn flush_start() {
                 let pending_trades = &crate::trades;
                 let mut index = 0;
                 let mut current_transaction_id = crate::models::get_max_transaction_id();
+                let mut matched_num = crate::models::count_matched_trades();
+                let mut matched_trade_batch = 1;
+                if(matched_num != 0){
+                    matched_trade_batch = matched_num / 10 + 1;
+                }
+                current_transaction_id += matched_trade_batch;
+
                 for trade in pending_trades {
-                    current_transaction_id += index / 100 + 1;
+                    current_transaction_id += index / 10;
                     //let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut taker_order = trade.taker_order.clone();
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
