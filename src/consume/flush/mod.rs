@@ -49,7 +49,7 @@ pub fn insert_taker(taker_order: &mut OrderInfo, engine_trade: &EngineTrade) -> 
 }
 
 pub fn generate_trade(
-    taker_order: &OrderInfo,
+    taker_order: &UpdateOrder,
     maker_order: &UpdateOrder,
     engine_trade: &EngineTrade,
     transaction_id: i32,
@@ -57,6 +57,14 @@ pub fn generate_trade(
     // todo:更新redis余额
     //fixme::默认值设计
     unsafe {
+        println!("flush--0004");
+        println!("flush--0010-{}",crate::market_id.clone());
+        println!("flush--0011-{}",maker_order.trader_address.clone());
+        println!("flush--0012-{}",taker_order.trader_address.clone());
+        println!("flush--0013-{:?}",engine_trade.clone());
+        println!("flush--0014-{}",engine_trade.maker_order_id.clone());
+        println!("flush--0016-{}",get_current_time());
+
         let mut trade = TradeInfo {
             id: "".to_string(),
             transaction_id,
@@ -69,10 +77,11 @@ pub fn generate_trade(
             amount: engine_trade.amount,
             taker_side: engine_trade.taker_side.clone(),
             maker_order_id: engine_trade.maker_order_id.clone(),
-            taker_order_id: engine_trade.taker_order.id.clone(),
+            taker_order_id: engine_trade.taker_order_id.clone(),
             updated_at: get_current_time(),
             created_at: get_current_time(),
         };
+        println!("flush--0005");
         let data = format!(
             "{}{}{}{}{}{}{}{}{}",
             trade.market_id,
@@ -86,6 +95,7 @@ pub fn generate_trade(
             trade.created_at
         );
         let txid = sha256(data);
+        println!("flush--0006");
         trade.id = txid;
         let trade_arr = struct2array(&trade);
         trade_arr

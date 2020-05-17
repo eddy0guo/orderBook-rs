@@ -8,7 +8,6 @@ use std::collections::BTreeMap;
 
 use super::models::*;
 use super::util::*;
-use crate::trades;
 use chrono::offset::LocalResult;
 use chrono::prelude::*;
 use jsonrpc_http_server::jsonrpc_core::*;
@@ -55,8 +54,11 @@ pub fn engine_start() {
                      crate::available_buy_orders.len(), crate::available_sell_orders.len(),
                      crate::available_buy_orders, crate::available_sell_orders);
         }**/
+        println!("0001---");
         for ms in mss.iter() {
+            println!("0002---");
             for m in ms.messages() {
+                println!("0003---");
                 let mut message = String::new();
                 let message = String::from_utf8_lossy(m.value);
                 let mut decoded_message: EngineOrder = Default::default();
@@ -65,15 +67,18 @@ pub fn engine_start() {
                     println!("decode message error {:?}", err);
                     decoded_order
                 });
-
+                println!("0004---");
                 decoded_order.price = decoded_order.price.to_fix(4);
                 decoded_order.amount = decoded_order.amount.to_fix(4);
                 //println!("new order--hello- {:?},---{}--{}",decoded_message,message,decoded_message.amount.to_fix(4));
                 // todo:checkout available amount
+                println!("0005---");
                 engine::matched(decoded_order);
+                println!("0006---");
                 // println!("{}:{}@{}: {:?}", ms.topic(), ms.partition(), m.offset, message);
             }
             let _ = crate::ORDER_CONSUMER.lock().unwrap().consume_messageset(ms);
+            println!("0007---");
         }
         /**
         unsafe {
@@ -90,8 +95,10 @@ pub fn flush_start() {
         unsafe {
             let mut trades_arr: Vec<Vec<String>> = Default::default();
             if crate::trades.len() > 0 {
+                println!("\n\n\n\n\n\n");
                 println!("start flush engine result {:?}", crate::trades);
-                let pending_trades = &crate::trades;
+                let mut pending_trades = Vec::new();
+                pending_trades.clone_from_slice(&crate::trades);
                 let mut index = 0;
                 let mut current_transaction_id = crate::models::get_max_transaction_id();
                 let mut matched_num = crate::models::count_matched_trades();
@@ -102,16 +109,15 @@ pub fn flush_start() {
                 current_transaction_id += matched_trade_batch;
 
                 for trade in pending_trades {
+                    println!("trade1={:#?}",trade);
                     current_transaction_id += index / 10;
                     //let mut taker_order = crate::models::get_order(&trade.taker_order_id);
-                    let mut taker_order = trade.taker_order.clone();
+                    println!("trade2={:#?}",trade);
+                    let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
-                    println!(
-                        "taker_order={:?},maker_order={:?}",
-                        taker_order, maker_order
-                    );
-                    flush::insert_taker(&mut taker_order, &trade);
+                    // flush::insert_taker(&mut taker_order, &trade);
                     flush::update_maker(&mut maker_order, &trade);
+                    println!("trade4={:#?}",trade);
                     let trade_arr = flush::generate_trade(
                         &taker_order,
                         &maker_order,
@@ -119,8 +125,12 @@ pub fn flush_start() {
                         current_transaction_id,
                     );
                     println!("generate_trade {:?}", trade_arr);
+                    println!("flush--0002");
                     trades_arr.push(trade_arr);
-                    trades.pop();
+                    println!("flush--0003");
+                    // trades.remove(0);
+                    crate::trades.retain(|x| x.taker_order_id != trade.taker_order_id);
+                    println!("flush--0004");
                     index += 1;
                 }
                 println!("insert trades_arr {:#?}", trades_arr);

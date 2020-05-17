@@ -258,7 +258,7 @@ pub fn get_order(id: &str) -> UpdateOrder {
     let mut order: UpdateOrder = Default::default();
     let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[&id]);
     if let Err(err) = result {
-        println!("get_order failed {:?},sql={}", err,sql);
+        println!("get_order failed {:?},sql={},id={}", err,sql,id);
         if !crate::restartDB() {
             return order;
         }
