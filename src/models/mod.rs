@@ -167,11 +167,6 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>, trade_table: &str) {
         tradesArr.append(str_trade.as_mut());
         index += 1;
     }
-
-    println!(
-        "insert_trade successful insert,sql={}---tradesarr={:#?}",
-        query, tradesArr
-    );
     let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
     // let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &tradesArr[0..tradesArr.len()]);
     if let Err(err) = result {
@@ -190,7 +185,6 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>, trade_table: &str) {
 }
 
 pub fn insert_order2(trades: &mut Vec<String>) {
-    println!("start insert {:?}", trades);
     insert_order(trades, crate::WRITE_ORDER_TABLE);
     insert_order(trades, crate::WRITE_ORDER_TMP_TABLE);
 }

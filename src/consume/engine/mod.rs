@@ -162,12 +162,10 @@ pub fn matched(mut taker_order: OrderInfo) {
                 println!("0016---");
                 break;
             }
-            println!("0017---");
             println!("match result {:?}", crate::trades);
             sum_matched = (sum_matched + matched_amount).to_fix(4);
         }
         println!("finished match_order");
-        println!("0018---");
     }
 }
 

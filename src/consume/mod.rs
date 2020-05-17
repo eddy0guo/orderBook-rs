@@ -97,8 +97,7 @@ pub fn flush_start() {
             if crate::trades.len() > 0 {
                 println!("\n\n\n\n\n\n");
                 println!("start flush engine result {:?}", crate::trades);
-                let mut pending_trades = Vec::new();
-                pending_trades.clone_from_slice(&crate::trades);
+                let pending_trades = crate::trades.clone();
                 let mut index = 0;
                 let mut current_transaction_id = crate::models::get_max_transaction_id();
                 let mut matched_num = crate::models::count_matched_trades();
@@ -109,15 +108,13 @@ pub fn flush_start() {
                 current_transaction_id += matched_trade_batch;
 
                 for trade in pending_trades {
-                    println!("trade1={:#?}",trade);
+                    println!("trade-1----={:#?}",trade);
                     current_transaction_id += index / 10;
                     //let mut taker_order = crate::models::get_order(&trade.taker_order_id);
-                    println!("trade2={:#?}",trade);
                     let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
                     // flush::insert_taker(&mut taker_order, &trade);
                     flush::update_maker(&mut maker_order, &trade);
-                    println!("trade4={:#?}",trade);
                     let trade_arr = flush::generate_trade(
                         &taker_order,
                         &maker_order,
