@@ -113,7 +113,10 @@ pub fn flush_start() {
                     //let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
-                    // flush::insert_taker(&mut taker_order, &trade);
+                    println!("ttttttttt {:?}---{:?}", taker_order,maker_order);
+
+
+
                     flush::update_maker(&mut maker_order, &trade);
                     let trade_arr = flush::generate_trade(
                         &taker_order,
