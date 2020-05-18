@@ -110,7 +110,7 @@ fn consumer_init(topic: String) -> Result<Consumer, KafkaError> {
     let con = Consumer::from_hosts(brokers)
         .with_topic(topic)
         .with_group(group)
-        .with_fallback_offset(FetchOffset::Earliest)
+        .with_fallback_offset(FetchOffset::Latest)
         .with_offset_storage(GroupOffsetStorage::Kafka)
         .create()?;
     Ok(con)
