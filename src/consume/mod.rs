@@ -46,6 +46,7 @@ pub fn engine_start() {
         let mut mss = crate::ORDER_CONSUMER.lock().unwrap().poll().unwrap();
         if mss.is_empty() {
             // println!("No order messages available right now.");
+            std::thread::sleep(std::time::Duration::new(0, 100 * 1000 * 1000));
             continue;
         }
         /**
@@ -91,30 +92,34 @@ pub fn engine_start() {
 }
 
 pub fn flush_start() {
+    let mut index = 0;
     loop {
         unsafe {
-            let mut trades_arr: Vec<Vec<String>> = Default::default();
+            index += 1;
+            if index % 100 == 0  {
+                println!("time={:?}--trades={:?}--", crate::util::get_current_time(),crate::trades);
+            }
             if crate::trades.len() > 0 {
                 println!("\n\n\n\n\n\n");
+                let mut trades_arr: Vec<Vec<String>> = Default::default();
                 println!("start flush engine result {:?}", crate::trades);
                 let pending_trades = crate::trades.clone();
                 let mut index = 0;
                 let mut current_transaction_id = crate::models::get_max_transaction_id();
                 let mut matched_num = crate::models::count_matched_trades();
                 let mut matched_trade_batch = 1;
-                if(matched_num != 0){
+                if (matched_num != 0) {
                     matched_trade_batch = matched_num / 10 + 1;
                 }
                 current_transaction_id += matched_trade_batch;
 
                 for trade in pending_trades {
-                    println!("trade-1----={:#?}",trade);
+                    println!("trade-1----={:#?}", trade);
                     current_transaction_id += index / 10;
                     //let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
-                    println!("ttttttttt {:?}---{:?}", taker_order,maker_order);
-
+                    println!("ttttttttt {:?}---{:?}", taker_order, maker_order);
 
 
                     flush::update_maker(&mut maker_order, &trade);
@@ -127,10 +132,11 @@ pub fn flush_start() {
                     println!("generate_trade {:?}", trade_arr);
                     println!("flush--0002");
                     trades_arr.push(trade_arr);
-                    println!("flush--0003");
+                    println!("flush--0003---trade.taker_order_id={},gloable_tratde={:?}-", trade.taker_order_id, crate::trades);
                     // trades.remove(0);
-                    crate::trades.retain(|x| x.taker_order_id != trade.taker_order_id);
-                    println!("flush--0004");
+                    crate::trades.retain(|x| !(x.taker_order_id == trade.taker_order_id &&
+                        x.maker_order_id == trade.maker_order_id));
+                    println!("flush--0004---trade.taker_order_id={},gloable_tratde={:?}-", trade.taker_order_id, crate::trades);
                     index += 1;
                 }
                 println!("insert trades_arr {:#?}", trades_arr);
@@ -139,7 +145,9 @@ pub fn flush_start() {
             }
             //println!("3333----{:?}{:?}---33", taker_order, maker_order);
             //println!("have no engine trade {:?}", crate::trades);
-            std::thread::sleep(std::time::Duration::new(0, 1000));
+            // println!("have no engine trade {:?}", crate::util::get_current_time());
+            std::thread::sleep(std::time::Duration::new(0, 100 * 1000 * 1000));
+            // println!("have no engine trade2 {:?}", crate::util::get_current_time());
         }
     }
 }

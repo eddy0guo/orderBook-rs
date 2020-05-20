@@ -42,12 +42,12 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
         }
         loop {
             if price_gap >= 0.0 {
-                println!("222222222222----- price_gap={}---index={}--partner_available_orders={:?}-\n", price_gap, index, partner_available_orders);
+                //println!("222222222222----- price_gap={}---index={}--partner_available_orders={:?}-\n", price_gap, index, partner_available_orders);
                 partner_available_orders.insert(index, new_order);
                 break;
             }
             if index == partner_available_orders.len() - 1 {
-                println!("333333----- price_gap={}---index={}--partner_available_orders={:?}-\n", price_gap, index, partner_available_orders);
+                //println!("333333----- price_gap={}---index={}--partner_available_orders={:?}-\n", price_gap, index, partner_available_orders);
                 partner_available_orders.insert(index + 1, new_order);
                 break;
             }
@@ -58,7 +58,7 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
 
 pub fn matched(mut taker_order: OrderInfo) {
     unsafe {
-        println!("start match_order = {:?}---opponents_available_orders={:?}", taker_order, crate::available_buy_orders);
+        // println!("start match_order = {:?}---opponents_available_orders={:?}", taker_order, crate::available_buy_orders);
     }
     unsafe {
         let mut sum_matched: f64 = 0.0;
@@ -174,6 +174,6 @@ pub fn generate_trade(taker_order: &OrderInfo, maker_order: &EngineOrder, matche
         };
         // 这里加上takerorder字段
         crate::trades.push(trade);
-        println!("finished push trades {:?}", crate::trades);
+        // println!("finished push trades {:?}", crate::trades);
     }
 }
