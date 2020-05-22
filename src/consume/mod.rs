@@ -97,14 +97,14 @@ pub fn flush_start() {
         unsafe {
             index += 1;
             if index % 100 == 0  {
-                println!("time={:?}--trades={:?}--", crate::util::get_current_time(),crate::trades);
+                println!("[FLUSH]:time={:?}--trades={:?}--", crate::util::get_current_time(),crate::trades);
             }
             if crate::trades.len() > 0 {
                 println!("\n\n\n\n\n\n");
                 let mut trades_arr: Vec<Vec<String>> = Default::default();
-                println!("start flush engine result {:?}", crate::trades);
+                println!("[FLUSH]:start flush engine result {:?}", crate::trades);
                 let pending_trades = crate::trades.clone();
-                let mut index = 0;
+                let mut index2 = 0;
                 let mut current_transaction_id = crate::models::get_max_transaction_id();
                 let mut matched_num = crate::models::count_matched_trades();
                 let mut matched_trade_batch = 1;
@@ -114,32 +114,34 @@ pub fn flush_start() {
                 current_transaction_id += matched_trade_batch;
 
                 for trade in pending_trades {
-                    println!("trade-1----={:#?}", trade);
-                    current_transaction_id += index / 10;
+                    println!("[FLUSH]:current trade={:#?}", trade,);
+                    current_transaction_id += index2 / 10;
+                    println!("[FLUSH]: taker_order_id={:?},index={}",trade.taker_order_id,index2);
                     //let mut taker_order = crate::models::get_order(&trade.taker_order_id);
-                    let mut taker_order = crate::models::get_order(&trade.taker_order_id);
+                    //let mut taker_order = crate::models::get_order(&trade.taker_order_id);
+                    //println!("[FLUSH]: taker_order={:?}",taker_order);
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
-                    println!("ttttttttt {:?}---{:?}", taker_order, maker_order);
+                    println!("[FLUSH]: maker_order={:?}",maker_order);
+                    //println!("[FLUSH]: takerorder={:?},maker_order={:?}", taker_order, maker_order);
 
 
                     flush::update_maker(&mut maker_order, &trade);
                     let trade_arr = flush::generate_trade(
-                        &taker_order,
+                        &trade.taker,
                         &maker_order,
                         &trade,
                         current_transaction_id,
                     );
-                    println!("generate_trade {:?}", trade_arr);
-                    println!("flush--0002");
+                    println!("[FLUSH]:generate_trade {:?}", trade_arr);
                     trades_arr.push(trade_arr);
-                    println!("flush--0003---trade.taker_order_id={},gloable_tratde={:?}-", trade.taker_order_id, crate::trades);
+                    println!("[FLUSH]:0003---trade.taker_order_id={},gloable_tratde={:?}-", trade.taker_order_id, crate::trades);
                     // trades.remove(0);
                     crate::trades.retain(|x| !(x.taker_order_id == trade.taker_order_id &&
                         x.maker_order_id == trade.maker_order_id));
-                    println!("flush--0004---trade.taker_order_id={},gloable_tratde={:?}-", trade.taker_order_id, crate::trades);
-                    index += 1;
+                    println!("[FLUSH]:-0004---trade.taker_order_id={},gloable_tratde={:?}-", trade.taker_order_id, crate::trades);
+                    index2 += 1;
                 }
-                println!("insert trades_arr {:#?}", trades_arr);
+                println!("[FLUSH]:insert trades_arr {:#?}", trades_arr);
                 insert_trade2(&mut trades_arr);
                 continue;
             }

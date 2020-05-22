@@ -22,6 +22,7 @@ pub struct EngineTrade {
     pub amount: f64,
     pub price: f64,
     pub market_id: String,
+    pub taker: String,
 }
 
 fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_order: EngineOrder) {
@@ -171,6 +172,7 @@ pub fn generate_trade(taker_order: &OrderInfo, maker_order: &EngineOrder, matche
             taker_side: taker_order2.side.clone(),
             maker_order_id: maker_order2.id,
             taker_order_id: taker_order2.id,
+            taker: taker_order2.trader_address,
         };
         // 这里加上takerorder字段
         crate::trades.push(trade);

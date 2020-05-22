@@ -49,7 +49,7 @@ pub fn insert_taker(taker_order: &mut OrderInfo, engine_trade: &EngineTrade) -> 
 }
 
 pub fn generate_trade(
-    taker_order: &UpdateOrder,
+    taker: &str,
     maker_order: &UpdateOrder,
     engine_trade: &EngineTrade,
     transaction_id: i32,
@@ -64,7 +64,7 @@ pub fn generate_trade(
             status: "matched".to_string(),
             market_id: crate::market_id.clone(),
             maker: maker_order.trader_address.clone(),
-            taker: taker_order.trader_address.clone(),
+            taker: taker.to_string(),
             price: engine_trade.price,
             amount: engine_trade.amount,
             taker_side: engine_trade.taker_side.clone(),

@@ -237,8 +237,10 @@ pub fn get_order(id: &str) -> UpdateOrder {
             from {} where id=$1",
         crate::READ_ORDER_TABLE
     );
+    println!("[FLUSH]:get_order 1111");
     let mut order: UpdateOrder = Default::default();
     let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[&id]);
+    println!("[FLUSH]:get_order 2222");
     if let Err(err) = result {
         println!("get order failed {:?},sql={}", err, sql);
         if !crate::restartDB() {
@@ -246,8 +248,31 @@ pub fn get_order(id: &str) -> UpdateOrder {
         }
         result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[&id]);
     }
+    println!("[FLUSH]:get_order 3333--result");
     //id 唯一，直接去第一个成员
     let rows = result.unwrap();
+    println!("[FLUSH]:get_order 6666");
+
+
+    let id: String = rows[0].get(0);
+    println!("[FLUSH]:rowget0-{}",id);
+    let  trader_address: String = rows[0].get(1);
+    println!("[FLUSH]:rowget1-{}",trader_address);
+    let status: String = rows[0].get(2);
+    println!("[FLUSH]:rowget2-{}",status);
+    let  amount: f64 = rows[0].get(3);
+    println!("[FLUSH]:rowget3-{}",amount);
+    let  available_amount: f64 = rows[0].get(4);
+    println!("[FLUSH]:rowget4-{}",available_amount);
+    let  confirmed_amount: f64 = rows[0].get(5);
+    println!("[FLUSH]:rowget5-{}",confirmed_amount);
+    let canceled_amount: f64 = rows[0].get(6);
+    println!("[FLUSH]:rowget6-{}",canceled_amount);
+    let pending_amount: f64 = rows[0].get(7);
+    println!("[FLUSH]:rowget7-{}",pending_amount);
+    let updated_at: String = rows[0].get(8);
+    println!("[FLUSH]:rowget8-{}",updated_at);
+
     order = UpdateOrder {
         id: rows[0].get(0),
         trader_address: rows[0].get(1),
@@ -259,6 +284,7 @@ pub fn get_order(id: &str) -> UpdateOrder {
         pending_amount: rows[0].get(7),
         updated_at: rows[0].get(8),
     };
+    println!("[FLUSH]:get_order 4444");
     order
 }
 

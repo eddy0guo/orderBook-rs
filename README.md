@@ -21,7 +21,7 @@ cargo build or cargo build --release
 3、ws远程推送增量数据（bull要改成kafka了），或者把原来的adex——engine单独推送bull
 4、trade的通过锁来进行多线程消费数据
 5、压力测试
-6、订单取消
+6、订单取消---多开个线程专门负责取消订单
 ```
 
 ##FIXME
