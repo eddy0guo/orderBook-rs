@@ -42,8 +42,8 @@ pub fn insert_taker(taker_order: &mut OrderInfo, engine_trade: &EngineTrade) -> 
     } else {
         error!("Other circumstances that were not considered, or should not have occurred");
     }
-    let mut order_info = struct2array(taker_order);
-    crate::models::insert_order2(&mut order_info);
+    let order_info = struct2array(taker_order);
+    crate::models::insert_order2(order_info);
     true
 }
 

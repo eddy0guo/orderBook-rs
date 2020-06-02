@@ -14,7 +14,7 @@ use std::ptr::null;
 use std::rc::Rc;
 use std::time::Duration;
 use futures::executor::block_on;
-// use async_std::task;
+use async_std::task;
 
 
 
@@ -89,8 +89,8 @@ pub fn matched(mut taker_order: OrderInfo) {
             }
 
             if opponents_available_orders.len() == 0 {
-                let mut order_info = crate::util::struct2array(&taker_order);
-                insert_order2(&mut order_info);
+                let order_info = crate::util::struct2array(&taker_order);
+                insert_order2(order_info);
                 let taker_order2 = EngineOrder {
                     id: taker_order.id,
                     price: taker_order.price,
@@ -139,10 +139,9 @@ pub fn matched(mut taker_order: OrderInfo) {
             info!("unknown case")
         }
 
-        let mut order_info = crate::util::struct2array(&taker_order);
-        let insert_order_future = insert_order2(&mut order_info);
-        //task::spawn(insert_order2(&mut order_info));
-
+        let order_info = crate::util::struct2array(&taker_order);
+        //let insert_order_future = insert_order2(&mut order_info);
+        task::spawn(insert_order2(order_info));
         if taker_order.available_amount > 0.0 {
             let taker_order2 = EngineOrder {
                 id: taker_order.id.clone(),

@@ -170,11 +170,12 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>, trade_table: &str) {
     );
 }
 
-pub  async fn insert_order2(trades: &mut Vec<String>) {
+pub  async fn insert_order2(trades: Vec<String>) {
+    let mut trades_vec = trades;
     info!("start---------------------");
-    insert_order(trades, crate::WRITE_ORDER_TABLE);
+    insert_order(&mut trades_vec, crate::WRITE_ORDER_TABLE);
     info!("start2---------------------");
-    insert_order(trades, crate::WRITE_ORDER_TMP_TABLE);
+    insert_order(&mut trades_vec, crate::WRITE_ORDER_TMP_TABLE);
     info!("end---------------------");
 }
 
