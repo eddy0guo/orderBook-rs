@@ -31,11 +31,11 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
         let mut price_gap = 0.0;
         if partner_available_orders.len() == 0 {
             partner_available_orders.push(new_order);
-            //println!("add_available_orders 2222= {:?}", partner_available_orders);
+            //info!("add_available_orders 2222= {:?}", partner_available_orders);
 
             return;
         }
-        // println!("add_available_orders333 = {:?}", partner_available_orders);
+        // info!("add_available_orders333 = {:?}", partner_available_orders);
         if new_order.side == "buy" {
             price_gap = (new_order.price - partner_available_orders[index].price).to_fix(4);
         } else {
@@ -43,12 +43,12 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
         }
         loop {
             if price_gap >= 0.0 {
-                //println!("222222222222----- price_gap={}---index={}--partner_available_orders={:?}-\n", price_gap, index, partner_available_orders);
+                //info!("222222222222----- price_gap={}---index={}--partner_available_orders={:?}-\n", price_gap, index, partner_available_orders);
                 partner_available_orders.insert(index, new_order);
                 break;
             }
             if index == partner_available_orders.len() - 1 {
-                //println!("333333----- price_gap={}---index={}--partner_available_orders={:?}-\n", price_gap, index, partner_available_orders);
+                //info!("333333----- price_gap={}---index={}--partner_available_orders={:?}-\n", price_gap, index, partner_available_orders);
                 partner_available_orders.insert(index + 1, new_order);
                 break;
             }
@@ -59,21 +59,21 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
 
 pub fn matched(mut taker_order: OrderInfo) {
     unsafe {
-        // println!("start match_order = {:?}---opponents_available_orders={:?}", taker_order, crate::available_buy_orders);
+        // info!("start match_order = {:?}---opponents_available_orders={:?}", taker_order, crate::available_buy_orders);
     }
     unsafe {
         let mut sum_matched: f64 = 0.0;
         let mut matched_amount: f64 = 0.0;
         let mut index = 0;
-        println!("loop index {}", index);
+        info!("loop index {}", index);
         let mut opponents_available_orders = &mut Default::default();
         let mut partner_available_orders = &mut Default::default();
         let mut price_gap = 0.0;
 
 
-        println!("0010---");
+        info!("0010---");
         loop {
-            println!("0011---");
+            info!("0011---");
             if taker_order.side == "sell" {
                 opponents_available_orders = &mut crate::available_buy_orders;
                 partner_available_orders = &mut crate::available_sell_orders;
@@ -89,11 +89,13 @@ pub fn matched(mut taker_order: OrderInfo) {
             }
 
 
-            // println!("opponents_available_orders----------{:?}-",opponents_available_orders);
-            println!("0012---");
+            // info!("opponents_available_orders----------{:?}-",opponents_available_orders);
+            info!("0012---");
             if opponents_available_orders.len() == 0 {
                 let mut order_info = crate::util::struct2array(&taker_order);
+                info!("0012.1---");
                 insert_order2(&mut order_info);
+                info!("0012.2---");
                 let taker_order2 = EngineOrder {
                     id: taker_order.id,
                     price: taker_order.price,
@@ -110,7 +112,7 @@ pub fn matched(mut taker_order: OrderInfo) {
             // let mut next_available_amount = (current_available_amount - current_opponents_amount).to_fix(4);
             // 匹配
             if current_available_amount > 0.0 && price_gap <= 0.0 {
-                // println!("kkk000----{}---{}----{}-", current_available_amount, taker_order.price, crate::available_buy_orders[0].price);
+                // info!("kkk000----{}---{}----{}-", current_available_amount, taker_order.price, crate::available_buy_orders[0].price);
                 matched_amount = (current_available_amount - current_opponents_amount).abs().to_fix(4);
                 if current_available_amount < current_opponents_amount {
                     matched_amount = current_available_amount;
@@ -130,7 +132,7 @@ pub fn matched(mut taker_order: OrderInfo) {
                 break;
             }
             sum_matched = (sum_matched + matched_amount).to_fix(4);
-            println!("match result {:?}", crate::trades);
+            info!("match result {:?}", crate::trades);
         }
 
         if taker_order.available_amount > 0.0 && taker_order.pending_amount == 0.0 {
@@ -140,11 +142,13 @@ pub fn matched(mut taker_order: OrderInfo) {
         } else if taker_order.available_amount == 0.0 && taker_order.pending_amount > 0.0 {
             taker_order.status = "full_filled".to_string();
         } else {
-            println!("unknown case")
+            info!("unknown case")
         }
 
         let mut order_info = crate::util::struct2array(&taker_order);
+        info!("0012.3---");
         insert_order2(&mut order_info);
+        info!("0012.4---");
 
         if taker_order.available_amount > 0.0 {
             let taker_order2 = EngineOrder {
@@ -156,7 +160,7 @@ pub fn matched(mut taker_order: OrderInfo) {
             };
             add_available_orders(partner_available_orders, taker_order2);
         }
-        println!("finished match_order");
+        info!("finished match_order");
     }
 }
 
@@ -176,6 +180,6 @@ pub fn generate_trade(taker_order: &OrderInfo, maker_order: &EngineOrder, matche
         };
         // 这里加上takerorder字段
         crate::trades.push(trade);
-        // println!("finished push trades {:?}", crate::trades);
+        // info!("finished push trades {:?}", crate::trades);
     }
 }

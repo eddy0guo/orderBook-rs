@@ -19,6 +19,12 @@ use std::sync::Mutex;
 #[macro_use]
 extern crate lazy_static;
 
+#[macro_use]
+extern crate log;
+use log::Level;
+use log::LevelFilter;
+
+
 use crate::models::get_max_transaction_id;
 use crate::util::get_current_time;
 use chrono::prelude::*;
@@ -45,26 +51,26 @@ const WRITE_TRADE_TMP_TABLE: &str = "mist_trades_tmp2";
 
 lazy_static! {
     static ref CLIENTDB: Mutex<postgres::Client> = Mutex::new({
-        println!("lazy_static--postgres");
+        info!("lazy_static--postgres");
         connetDB().unwrap()
     });
     static ref ORDER_CONSUMER: Mutex<Consumer> = Mutex::new({
-        println!("lazy_static--ORDER_CONSUMER");
+        info!("lazy_static--ORDER_CONSUMER");
         unsafe { consumer_init(market_id.clone()).unwrap() }
     });
     static ref TRADE_CONSUMER: Mutex<Consumer> = Mutex::new({
-        println!("lazy_static-CONSUMER-");
+        info!("lazy_static-CONSUMER-");
         unsafe { consumer_init(market_id.clone()).unwrap() }
     });
     static ref TRADE_PRODUCER: Mutex<Producer> = Mutex::new({
-        println!("lazy_static-TRADE_PRODUCER-");
+        info!("lazy_static-TRADE_PRODUCER-");
         producer_init().unwrap()
     });
 }
 
 pub fn restartDB() -> bool {
     let now = Local::now();
-    println!("restart postgresql {:?}", now);
+    info!("restart postgresql {:?}", now);
     // let client =  connetDB();
     if let Some(client) = connetDB() {
         *crate::CLIENTDB.lock().unwrap() = client;
@@ -75,7 +81,7 @@ pub fn restartDB() -> bool {
 
 pub fn restart_kafka(topic: String) -> bool {
     let now = Local::now();
-    println!("reconnect {} kafka stream  at {:?}", topic, now);
+    info!("reconnect {} kafka stream  at {:?}", topic, now);
     if let Ok(client) = consumer_init(topic) {
         *crate::ORDER_CONSUMER.lock().unwrap() = client;
         return true;
@@ -89,7 +95,7 @@ fn connetDB() -> Option<postgres::Client> {
     if let Some(mist_mode) = env::var_os("MIST_MODE") {
         dbname = mist_mode.into_string().unwrap();
     } else {
-        println!("have no MIST_MODE env");
+        info!("have no MIST_MODE env");
     }
 
     let url = format!("host=pgm-wz9m1yb4h5g4sl7x127770.pg.rds.aliyuncs.com port=1433 user=product password=myHzSesQc7TXSS5HOXZDsgq7SNUHY2 dbname={}", dbname);
@@ -97,7 +103,7 @@ fn connetDB() -> Option<postgres::Client> {
     if let Ok(tmp) = Client::connect(&url, NoTls) {
         client = tmp;
     } else {
-        println!("connect postgresql failed");
+        info!("connect postgresql failed");
         return None;
     }
     Some(client)
@@ -127,15 +133,15 @@ fn producer_init() -> Result<Producer, KafkaError> {
 
 fn init(market: &str) {
     unsafe {
-        println!("start loading data at {}", get_current_time());
+        info!("start loading data at {}", get_current_time());
         available_buy_orders = models::list_available_orders("buy", market);
-        println!(
+        info!(
             "finished loading {} buy data at {}",
             available_buy_orders.len(),
             get_current_time()
         );
         available_sell_orders = models::list_available_orders("sell", market);
-        println!(
+        info!(
             "finished loading {} sell data at {}",
             available_sell_orders.len(),
             get_current_time()
@@ -145,7 +151,11 @@ fn init(market: &str) {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+   // env_logger::init();
+    env_logger::builder()
+        .format_timestamp(Option::from(env_logger::TimestampPrecision::Millis))
+       // .filter_level(LevelFilter::)
+        .init();
     for argument in env::args() {
         if argument.contains("--market-id=") {
             let market_option: Vec<&str> = argument.as_str().split('=').collect();
@@ -153,7 +163,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             unsafe {
                 market_id = market_option[1].to_string();
             }
-            println!("You passed --market_id as one of the arguments!");
+            info!("You passed --market_id as one of the arguments!");
         }
     }
     // init("ASIM-CNYC");
@@ -169,6 +179,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     rt.spawn(task2);
 
     tokio::signal::ctrl_c().await?;
-    println!("ctrl-c received!");
+    info!("ctrl-c received!");
     Ok(())
 }

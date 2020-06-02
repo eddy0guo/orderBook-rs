@@ -13,6 +13,7 @@ cargo build or cargo build --release
 ##usage       
 ```
  ./target/debug/mist-engine --market_id=MT-CNYC
+RUST_LOG=info ./target/debug/mist-engine-rs --market-id=MT-CNYC
 ```
 ##TODO
 ```

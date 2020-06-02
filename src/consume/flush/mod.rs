@@ -24,14 +24,14 @@ pub fn update_maker(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool
     } else if order.available_amount == 0.0 {
         order.status = "full_filled".to_string();
     } else {
-        println!("Other circumstances that were not considered, or should not have occurred");
+        info!("Other circumstances that were not considered, or should not have occurred");
     }
     crate::models::update_order(order);
     true
 }
 
 pub fn insert_taker(taker_order: &mut OrderInfo, engine_trade: &EngineTrade) -> bool {
-    println!("start insert_taker");
+    info!("start insert_taker");
     // todo:更新redis余额
     taker_order.available_amount = (taker_order.available_amount - engine_trade.amount).to_fix(4);
     taker_order.pending_amount = (taker_order.pending_amount + engine_trade.amount).to_fix(4);
@@ -41,7 +41,7 @@ pub fn insert_taker(taker_order: &mut OrderInfo, engine_trade: &EngineTrade) -> 
     } else if taker_order.available_amount == 0.0 {
         taker_order.status = "full_filled".to_string();
     } else {
-        println!("Other circumstances that were not considered, or should not have occurred");
+        info!("Other circumstances that were not considered, or should not have occurred");
     }
     let mut order_info = struct2array(taker_order);
     crate::models::insert_order2(&mut order_info);
