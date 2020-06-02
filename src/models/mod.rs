@@ -78,7 +78,6 @@ use std::ptr::null;
 use std::sync::Mutex;
 
 pub fn get_max_transaction_id() -> i32 {
-    info!("start get_max_transaction_id");
     let sql = format!(
         "select transaction_id  from {} where status!='matched' order by transaction_id desc limit 1",
         crate::READ_TRADE_TABLE
@@ -97,13 +96,14 @@ pub fn get_max_transaction_id() -> i32 {
     for row in rows {
         transaction_id = row.get(0);
     }
-    info!("finished get_max_transaction_id");
     transaction_id
 }
 
 pub fn count_matched_trades() -> i32 {
-    info!("start  count_matched_trades");
-    let sql = format!("SELECT  cast(count(1) as int4) FROM {} where status=\'matched\'", crate::READ_TRADE_TABLE);
+    let sql = format!(
+        "SELECT  cast(count(1) as int4) FROM {} where status=\'matched\'",
+        crate::READ_TRADE_TABLE
+    );
     let mut num: i32 = 0;
     let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[]);
 
@@ -118,10 +118,8 @@ pub fn count_matched_trades() -> i32 {
     for row in rows {
         num = row.get(0);
     }
-    info!("finished  count_matched_trades");
     num
 }
-
 
 pub fn insert_trade2(trades: &mut Vec<Vec<String>>) {
     insert_trade(trades, crate::WRITE_TRADE_TABLE);
@@ -141,7 +139,6 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>, trade_table: &str) {
                 temp_value = format!("{}{},", temp_value, trade[i]);
             } else {
                 temp_value = format!("{}{}", temp_value, trade[i]);
-                //temp_value =+ '$' + (i + 14 * index);
             }
         }
         if (index < trades_len - 1) {
@@ -159,7 +156,7 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>, trade_table: &str) {
     let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
     // let mut result = crate::CLIENTDB.lock().unwrap().execute(&*query, &tradesArr[0..tradesArr.len()]);
     if let Err(err) = result {
-        info!("insert trade sql={} failed {:?}", query, err);
+        error!("insert trade sql={} failed {:?}", query, err);
         if !crate::restartDB() {
             return;
         }
@@ -167,20 +164,18 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>, trade_table: &str) {
         result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
     }
     let rows = result.unwrap();
-    info!("2finished engine at {}",crate::get_current_time());
-    error!("3finished engine at {}",crate::get_current_time());
-    info!("4finished engine at {}",crate::get_current_time());
-    /***
-    info!(
+    debug!(
         "insert trade successful insert {:?} rows,sql={}",
         rows, query
     );
-    ***/
 }
 
-pub async fn insert_order2(trades: &mut Vec<String>) {
+pub  async fn insert_order2(trades: &mut Vec<String>) {
+    info!("start---------------------");
     insert_order(trades, crate::WRITE_ORDER_TABLE);
+    info!("start2---------------------");
     insert_order(trades, crate::WRITE_ORDER_TMP_TABLE);
+    info!("end---------------------");
 }
 
 pub fn insert_order(order_info: &mut Vec<String>, trade_table: &str) {
@@ -202,24 +197,24 @@ pub fn insert_order(order_info: &mut Vec<String>, trade_table: &str) {
         if !crate::restartDB() {
             return;
         }
-        //&[&bar, &baz],
         result = crate::CLIENTDB.lock().unwrap().execute(&*query, &[]);
     }
     let rows = result.unwrap();
-    /***
-    info!(
-        "insert_trade successful insert {:?} rows,sql={}",
-        rows, query
-    );***/
 }
 
 pub fn update_order(order: &UpdateOrder) {
     // fixme:注入的写法暂时有问题，先直接拼接
-    let sql =
-        format!("UPDATE {} SET (available_amount,confirmed_amount,canceled_amount,pending_amount,status,updated_at)=\
-                ({},confirmed_amount,canceled_amount,{},'{}','{}') WHERE id='{}'",
-                crate::WRITE_ORDER_TABLE, order.available_amount, order.pending_amount, order.status, order.updated_at, order.id);
-    info!("--{}-", sql);
+    let sql = format!(
+        "UPDATE {} SET (available_amount,confirmed_amount,\
+         canceled_amount,pending_amount,status,updated_at)=\
+         ({},confirmed_amount,canceled_amount,{},'{}','{}') WHERE id='{}'",
+        crate::WRITE_ORDER_TABLE,
+        order.available_amount,
+        order.pending_amount,
+        order.status,
+        order.updated_at,
+        order.id
+    );
     let mut result = crate::CLIENTDB.lock().unwrap().execute(&*sql, &[]);
     if let Err(err) = result {
         info!("update order failed {:?},sql={}", err, sql);
@@ -235,19 +230,17 @@ pub fn update_order(order: &UpdateOrder) {
 pub fn get_order(id: &str) -> UpdateOrder {
     let sql = format!(
         "select id,trader_address,status,\
-             cast(amount as float8),\
-            cast(available_amount as float8),\
-            cast(confirmed_amount as float8),\
-            cast(canceled_amount as float8),\
-            cast(pending_amount as float8),\
-            cast(updated_at as text) \
-            from {} where id=$1",
+         cast(amount as float8),\
+         cast(available_amount as float8),\
+         cast(confirmed_amount as float8),\
+         cast(canceled_amount as float8),\
+         cast(pending_amount as float8),\
+         cast(updated_at as text) \
+         from {} where id=$1",
         crate::READ_ORDER_TABLE
     );
-    info!("[FLUSH]:get_order 1111");
     let mut order: UpdateOrder = Default::default();
     let mut result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[&id]);
-    info!("[FLUSH]:get_order 2222");
     if let Err(err) = result {
         info!("get order failed {:?},sql={}", err, sql);
         if !crate::restartDB() {
@@ -255,7 +248,6 @@ pub fn get_order(id: &str) -> UpdateOrder {
         }
         result = crate::CLIENTDB.lock().unwrap().query(&*sql, &[&id]);
     }
-    info!("[FLUSH]:get_order 3333--result");
     //id 唯一，直接去第一个成员
     let rows = result.unwrap();
     order = UpdateOrder {
@@ -269,7 +261,6 @@ pub fn get_order(id: &str) -> UpdateOrder {
         pending_amount: rows[0].get(7),
         updated_at: rows[0].get(8),
     };
-    info!("[FLUSH]:get_order 4444");
     order
 }
 

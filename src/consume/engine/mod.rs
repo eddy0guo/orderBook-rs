@@ -13,6 +13,10 @@ use std::ops::Mul;
 use std::ptr::null;
 use std::rc::Rc;
 use std::time::Duration;
+use futures::executor::block_on;
+// use async_std::task;
+
+
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct EngineTrade {
@@ -65,15 +69,11 @@ pub fn matched(mut taker_order: OrderInfo) {
         let mut sum_matched: f64 = 0.0;
         let mut matched_amount: f64 = 0.0;
         let mut index = 0;
-        info!("loop index {}", index);
         let mut opponents_available_orders = &mut Default::default();
         let mut partner_available_orders = &mut Default::default();
         let mut price_gap = 0.0;
 
-
-        info!("0010---");
         loop {
-            info!("0011---");
             if taker_order.side == "sell" {
                 opponents_available_orders = &mut crate::available_buy_orders;
                 partner_available_orders = &mut crate::available_sell_orders;
@@ -88,14 +88,9 @@ pub fn matched(mut taker_order: OrderInfo) {
                 }
             }
 
-
-            // info!("opponents_available_orders----------{:?}-",opponents_available_orders);
-            info!("0012---");
             if opponents_available_orders.len() == 0 {
                 let mut order_info = crate::util::struct2array(&taker_order);
-                info!("0012.1---");
                 insert_order2(&mut order_info);
-                info!("0012.2---");
                 let taker_order2 = EngineOrder {
                     id: taker_order.id,
                     price: taker_order.price,
@@ -109,22 +104,21 @@ pub fn matched(mut taker_order: OrderInfo) {
 
             let mut current_opponents_amount = opponents_available_orders[0].amount.clone();
             let current_available_amount = (taker_order.amount - sum_matched).to_fix(4);
-            // let mut next_available_amount = (current_available_amount - current_opponents_amount).to_fix(4);
-            // 匹配
             if current_available_amount > 0.0 && price_gap <= 0.0 {
-                // info!("kkk000----{}---{}----{}-", current_available_amount, taker_order.price, crate::available_buy_orders[0].price);
-                matched_amount = (current_available_amount - current_opponents_amount).abs().to_fix(4);
                 if current_available_amount < current_opponents_amount {
                     matched_amount = current_available_amount;
                 } else {
                     matched_amount = current_opponents_amount;
                 }
 
-                taker_order.available_amount = (taker_order.available_amount - matched_amount).to_fix(4);
-                taker_order.pending_amount = (taker_order.pending_amount + matched_amount).to_fix(4);
-                opponents_available_orders[0].amount = (opponents_available_orders[0].amount - matched_amount).to_fix(4);
+                taker_order.available_amount =
+                    (taker_order.available_amount - matched_amount).to_fix(4);
+                taker_order.pending_amount =
+                    (taker_order.pending_amount + matched_amount).to_fix(4);
+                opponents_available_orders[0].amount =
+                    (opponents_available_orders[0].amount - matched_amount).to_fix(4);
 
-                generate_trade(&taker_order, &opponents_available_orders[0],matched_amount);
+                generate_trade(&taker_order, &opponents_available_orders[0], matched_amount);
                 if opponents_available_orders[0].amount == 0.0 {
                     opponents_available_orders.remove(0);
                 }
@@ -146,9 +140,8 @@ pub fn matched(mut taker_order: OrderInfo) {
         }
 
         let mut order_info = crate::util::struct2array(&taker_order);
-        info!("0012.3---");
-        insert_order2(&mut order_info);
-        info!("0012.4---");
+        let insert_order_future = insert_order2(&mut order_info);
+        //task::spawn(insert_order2(&mut order_info));
 
         if taker_order.available_amount > 0.0 {
             let taker_order2 = EngineOrder {
@@ -160,7 +153,6 @@ pub fn matched(mut taker_order: OrderInfo) {
             };
             add_available_orders(partner_available_orders, taker_order2);
         }
-        info!("finished match_order");
     }
 }
 

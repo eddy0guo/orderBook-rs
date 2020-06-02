@@ -24,7 +24,6 @@ extern crate log;
 use log::Level;
 use log::LevelFilter;
 
-
 use crate::models::get_max_transaction_id;
 use crate::util::get_current_time;
 use chrono::prelude::*;
@@ -151,10 +150,10 @@ fn init(market: &str) {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-   // env_logger::init();
+    // env_logger::init();
     env_logger::builder()
         .format_timestamp(Option::from(env_logger::TimestampPrecision::Millis))
-       // .filter_level(LevelFilter::)
+        // .filter_level(LevelFilter::)
         .init();
     for argument in env::args() {
         if argument.contains("--market-id=") {
