@@ -28,6 +28,8 @@ use crate::models::get_max_transaction_id;
 use crate::util::get_current_time;
 use chrono::prelude::*;
 use kafka::producer::{Producer, Record, RequiredAcks};
+use rdkafka::config::ClientConfig;
+use rdkafka::producer::{BaseProducer, BaseRecord};
 use std::fmt::Write;
 use std::ptr::null;
 use std::sync::mpsc::channel;
@@ -61,7 +63,7 @@ lazy_static! {
         info!("lazy_static-CONSUMER-");
         unsafe { consumer_init(market_id.clone()).unwrap() }
     });
-    static ref TRADE_PRODUCER: Mutex<Producer> = Mutex::new({
+    static ref ADD_PRODUCER: Mutex<BaseProducer> = Mutex::new({
         info!("lazy_static-TRADE_PRODUCER-");
         producer_init().unwrap()
     });
@@ -121,12 +123,18 @@ fn consumer_init(topic: String) -> Result<Consumer, KafkaError> {
     Ok(con)
 }
 
-fn producer_init() -> Result<Producer, KafkaError> {
+fn producer_init() -> Result<BaseProducer, KafkaError> {
+    /***
     let mut producer = Producer::from_hosts(vec![kafka_server.to_owned()])
         .with_ack_timeout(Duration::from_secs(1))
         .with_required_acks(RequiredAcks::One)
         .create()
         .unwrap();
+        ***/
+    let producer: BaseProducer = ClientConfig::new()
+        .set("bootstrap.servers", "localhost:9092")
+        .create()
+        .expect("Producer creation error");
     Ok(producer)
 }
 

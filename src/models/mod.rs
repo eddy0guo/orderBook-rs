@@ -79,7 +79,8 @@ use std::sync::Mutex;
 
 pub fn get_max_transaction_id() -> i32 {
     let sql = format!(
-        "select transaction_id  from {} where status!='matched' order by transaction_id desc limit 1",
+        //"select transaction_id  from {} where status!='matched' order by transaction_id desc limit 1",
+          "select transaction_id  from {} where status='pending' or status='successful'  order by transaction_id desc limit 1",
         crate::READ_TRADE_TABLE
     );
     let mut transaction_id: i32 = 0;

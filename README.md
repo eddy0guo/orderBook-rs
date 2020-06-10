@@ -2,7 +2,7 @@
 
 ##init
 ```sql
-insert into mist_orders2 select * from mist_orders where market_id='MT-CNYC' and available_amount>0;
+insert into mist_orders2 select * from mist_orders available_amount>0;
 ```
 
 ## build
@@ -23,6 +23,7 @@ RUST_LOG=info ./target/debug/mist-engine-rs --market-id=MT-CNYC
 4、trade的通过锁来进行多线程消费数据
 5、压力测试
 6、订单取消---多开个线程专门负责取消订单
+7、异步写数据库的错误处理
 ```
 
 ##FIXME

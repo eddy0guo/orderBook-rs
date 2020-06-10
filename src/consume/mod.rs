@@ -101,38 +101,55 @@ pub fn flush_start() {
                 let mut trades_arr: Vec<Vec<String>> = Default::default();
                 info!("[FLUSH]:start flush engine result {:?}", crate::trades);
                 let pending_trades = crate::trades.clone();
+                let add_book = flush::compute_order_book_updates(&pending_trades);
+                flush::push_add_book(add_book);
+                flush::push_add_trades(&pending_trades);
                 let mut index2 = 0;
-                let mut current_transaction_id = crate::models::get_max_transaction_id();
-                let mut matched_num = crate::models::count_matched_trades();
-                let mut matched_trade_batch = 1;
-                if (matched_num != 0) {
-                    matched_trade_batch = matched_num / 10;
-                }
-                current_transaction_id += matched_trade_batch;
+                let mut index_add = 0;
                 for trade in pending_trades {
-                    current_transaction_id += index2 / 10;
+                    index_add = index2 / 10;
                     //let mut taker_order = crate::models::get_order(&trade.taker_order_id);
+                    info!("[FLUSH]: maker_order1={:?}", trade.maker_order_id);
                     let mut maker_order = crate::models::get_order(&trade.maker_order_id);
-                    info!("[FLUSH]: maker_order={:?}", maker_order);
+                    info!("[FLUSH]: maker_order2={:?}", trade.maker_order_id);
                     //info!("[FLUSH]: takerorder={:?},maker_order={:?}", taker_order, maker_order);
-
+                    //可以异步
                     flush::update_maker(&mut maker_order, &trade);
                     let trade_arr = flush::generate_trade(
                         &trade.taker,
                         &maker_order,
                         &trade,
-                        current_transaction_id,
+                        index_add,
                     );
                     trades_arr.push(trade_arr);
-                    // trades.remove(0);
+                    // 在全局trades里移除该trade
                     crate::trades.retain(|x| {
                         !(x.taker_order_id == trade.taker_order_id
                             && x.maker_order_id == trade.maker_order_id)
                     });
                     index2 += 1;
                 }
-                info!("[FLUSH]:insert trades_arr {:?}", trades_arr);
+
+                //todo：关于laucher的队列的定序可以放到最后再确定
+                info!("[FLUSH]:get_max_transaction_id--111");
+                let mut current_transaction_id = crate::models::get_max_transaction_id();
+                info!("[FLUSH]:get_max_transaction_id-22- ");
+                let mut matched_num = crate::models::count_matched_trades();
+                info!("[FLUSH]:count_matched_trades");
+                let mut matched_trade_batch = 1;
+                if (matched_num != 0) {
+                    matched_trade_batch = matched_num / 10;
+                }
+                current_transaction_id += matched_trade_batch;
+                info!("rades_arr.iter_mut start");
+                for trade_arr  in trades_arr.iter_mut() {
+                    info!("trade_arr2222------{:?}-",trade_arr);
+                    let transaction_id  =  (*trade_arr[1]).parse::<i32>().unwrap() + current_transaction_id;
+                    info!("trade_arr3333------{:?}-\n\n\n",transaction_id);
+                    trade_arr[1] = transaction_id.to_string();
+                }
                 insert_trade2(&mut trades_arr);
+                info!("[FLUSH]:insert trades22_arr {:?}", trades_arr);
                 continue;
             }
             std::thread::sleep(std::time::Duration::new(0, 10 * 1000 * 1000));

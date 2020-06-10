@@ -10,7 +10,7 @@ edition = "2018"
 ## rdkafka = "~0.21"
 kafka = "0.8"
 # rdkafka = { git = "https://github.com/fede1024/rust-rdkafka.git", branch = "master", features = ["cmake-build"] }
-## rdkafka = { version = "0.23", features = ["cmake-build"] }
+rdkafka = { version = "0.23", features = ["cmake-build"] }
 tokio = { version = "0.2.2", features = ["full"] }
 ## futures = "0.3"
 log = "0.4.0"

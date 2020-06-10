@@ -1,5 +1,6 @@
 use crate::models::*;
 use crate::util::MathOperation;
+use crate::consume::flush;
 use kafka::producer::{Producer, Record, RequiredAcks};
 use log::__private_api_enabled;
 use rustc_serialize::json;
@@ -31,18 +32,45 @@ pub struct EngineTrade {
 
 fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_order: EngineOrder) {
     let mut index = 0;
+    let mut  book = flush::AddBook{
+        asks: Vec::new(),
+        bids: Vec::new(),
+    };
     unsafe {
         let mut price_gap = 0.0;
         if partner_available_orders.len() == 0 {
             partner_available_orders.push(new_order);
             //info!("add_available_orders 2222= {:?}", partner_available_orders);
-
             return;
         }
         // info!("add_available_orders333 = {:?}", partner_available_orders);
         if new_order.side == "buy" {
+            let mut priceExsit = false;
+            for bid in book.bids.iter_mut() {
+                if (new_order.price == bid[0]) {
+                    bid[1] = bid[1] + new_order.amount;
+                    priceExsit = true;
+                    break;
+                }
+            }
+            if !priceExsit {
+                book.bids.push([new_order.price, new_order.amount]);
+            }
+
             price_gap = (new_order.price - partner_available_orders[index].price).to_fix(4);
         } else {
+            let mut priceExsit = false;
+            for ask in book.asks.iter_mut() {
+                if (new_order.price == ask[0]) {
+                    ask[1] = ask[1] + new_order.amount;
+                    priceExsit = true;
+                    break;
+                }
+            }
+            if !priceExsit {
+                book.asks.push([new_order.price, new_order.amount]);
+            }
+
             price_gap = (partner_available_orders[index].price - new_order.price).to_fix(4);
         }
         loop {
@@ -59,6 +87,7 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
             index += 1;
         }
     }
+    flush::push_add_book(book);
 }
 
 pub fn matched(mut taker_order: OrderInfo) {
