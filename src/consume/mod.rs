@@ -125,12 +125,8 @@ pub fn flush_start() {
                     //info!("[FLUSH]: takerorder={:?},maker_order={:?}", taker_order, maker_order);
                     //可以异步
                     flush::update_maker(&mut maker_order, &trade);
-                    let trade_arr = flush::generate_trade(
-                        &trade.taker,
-                        &maker_order,
-                        &trade,
-                        index_add,
-                    );
+                    let trade_arr =
+                        flush::generate_trade(&trade.taker, &maker_order, &trade, index_add);
                     trades_arr.push(trade_arr);
                     // 在全局trades里移除该trade
                     crate::trades.retain(|x| {
@@ -152,10 +148,11 @@ pub fn flush_start() {
                 }
                 current_transaction_id += matched_trade_batch;
                 info!("rades_arr.iter_mut start");
-                for trade_arr  in trades_arr.iter_mut() {
-                    info!("trade_arr2222------{:?}-",trade_arr);
-                    let transaction_id  =  (*trade_arr[1]).parse::<i32>().unwrap() + current_transaction_id;
-                    info!("trade_arr3333------{:?}-\n\n\n",transaction_id);
+                for trade_arr in trades_arr.iter_mut() {
+                    info!("trade_arr2222------{:?}-", trade_arr);
+                    let transaction_id =
+                        (*trade_arr[1]).parse::<i32>().unwrap() + current_transaction_id;
+                    info!("trade_arr3333------{:?}-\n\n\n", transaction_id);
                     trade_arr[1] = transaction_id.to_string();
                 }
                 insert_trade2(&mut trades_arr);

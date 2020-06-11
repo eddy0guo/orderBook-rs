@@ -1,6 +1,8 @@
+use crate::consume::flush;
 use crate::models::*;
 use crate::util::*;
-use crate::consume::flush;
+use async_std::task;
+use futures::executor::block_on;
 use kafka::producer::{Producer, Record, RequiredAcks};
 use log::__private_api_enabled;
 use rustc_serialize::json;
@@ -14,10 +16,6 @@ use std::ops::Mul;
 use std::ptr::null;
 use std::rc::Rc;
 use std::time::Duration;
-use futures::executor::block_on;
-use async_std::task;
-
-
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct EngineTrade {
@@ -30,12 +28,12 @@ pub struct EngineTrade {
     pub taker: String,
 }
 
-pub fn cancel_order(order_info: &OrderInfo){
-    let mut  book = flush::AddBook{
+pub fn cancel_order(order_info: &OrderInfo) {
+    let mut book = flush::AddBook {
         asks: Vec::new(),
         bids: Vec::new(),
     };
-    let mut order = UpdateOrder{
+    let mut order = UpdateOrder {
         id: order_info.id.clone(),
         trader_address: order_info.trader_address.clone(),
         status: order_info.status.clone(),
@@ -51,7 +49,7 @@ pub fn cancel_order(order_info: &OrderInfo){
         if order_info.side == "buy" {
             partner_available_orders = &mut crate::available_sell_orders;
             book.bids.push([order_info.price, -order.amount]);
-        }else {
+        } else {
             partner_available_orders = &mut crate::available_buy_orders;
             book.asks.push([order_info.price, -order.amount]);
         }
@@ -65,12 +63,15 @@ pub fn cancel_order(order_info: &OrderInfo){
         order.canceled_amount = order.amount;
         order.updated_at = get_current_time();
         order.status = "cancled".to_string();
-        info!("update canceled order {:#?}",order);
+        info!("update canceled order {:#?}", order);
         task::spawn(update_order2(order));
     }
 }
 
-fn update_available_orders(partner_available_orders: &mut Vec<EngineOrder>, taker_order: OrderInfo) {
+fn update_available_orders(
+    partner_available_orders: &mut Vec<EngineOrder>,
+    taker_order: OrderInfo,
+) {
     let new_order = EngineOrder {
         id: taker_order.id.clone(),
         price: taker_order.price,
@@ -79,7 +80,7 @@ fn update_available_orders(partner_available_orders: &mut Vec<EngineOrder>, take
         created_at: taker_order.created_at.clone(),
     };
     let mut index = 0;
-    let mut  book = flush::AddBook{
+    let mut book = flush::AddBook {
         asks: Vec::new(),
         bids: Vec::new(),
     };

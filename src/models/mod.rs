@@ -171,7 +171,7 @@ pub fn insert_trade(trades: &mut Vec<Vec<String>>, trade_table: &str) {
     );
 }
 
-pub  async fn insert_order2(trades: Vec<String>) {
+pub async fn insert_order2(trades: Vec<String>) {
     let mut trades_vec = trades;
     info!("start---------------------");
     insert_order(&mut trades_vec, crate::WRITE_ORDER_TABLE);
@@ -203,7 +203,7 @@ pub fn insert_order(order_info: &mut Vec<String>, trade_table: &str) {
     let rows = result.unwrap();
 }
 
-pub  async fn update_order2(order: UpdateOrder) {
+pub async fn update_order2(order: UpdateOrder) {
     info!("start---------------------");
     update_order(&order, crate::WRITE_ORDER_TABLE);
     update_order(&order, crate::WRITE_ORDER_TMP_TABLE);
@@ -211,7 +211,7 @@ pub  async fn update_order2(order: UpdateOrder) {
 }
 
 //这里也要更新canceled状态的，要兼容
-pub fn update_order(order: &UpdateOrder,trade_table: &str) {
+pub fn update_order(order: &UpdateOrder, trade_table: &str) {
     // fixme:注入的写法暂时有问题，先直接拼接
     let sql = format!(
         "UPDATE {} SET (available_amount,confirmed_amount,\
