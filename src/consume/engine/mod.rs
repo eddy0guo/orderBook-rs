@@ -1,5 +1,5 @@
 use crate::consume::flush;
-use crate::models::*;
+use crate::models::{postgresql};
 use crate::util::*;
 use async_std::task;
 use futures::executor::block_on;
@@ -28,12 +28,12 @@ pub struct EngineTrade {
     pub taker: String,
 }
 
-pub fn cancel_order(order_info: &OrderInfo) {
+pub fn cancel_order(order_info: &postgresql::OrderInfo) {
     let mut book = flush::AddBook {
         asks: Vec::new(),
         bids: Vec::new(),
     };
-    let mut order = UpdateOrder {
+    let mut order = postgresql::UpdateOrder {
         id: order_info.id.clone(),
         trader_address: order_info.trader_address.clone(),
         status: order_info.status.clone(),
@@ -64,15 +64,15 @@ pub fn cancel_order(order_info: &OrderInfo) {
         order.updated_at = get_current_time();
         order.status = "cancled".to_string();
         info!("update canceled order {:#?}", order);
-        task::spawn(update_order2(order));
+        task::spawn(postgresql::update_order2(order));
     }
 }
 
 fn update_available_orders(
-    partner_available_orders: &mut Vec<EngineOrder>,
-    taker_order: OrderInfo,
+    partner_available_orders: &mut Vec<postgresql::EngineOrder>,
+    taker_order: postgresql::OrderInfo,
 ) {
-    let new_order = EngineOrder {
+    let new_order = postgresql::EngineOrder {
         id: taker_order.id.clone(),
         price: taker_order.price,
         amount: taker_order.amount,
@@ -85,7 +85,7 @@ fn update_available_orders(
         bids: Vec::new(),
     };
     let order_info = crate::util::struct2array(&taker_order);
-    task::spawn(insert_order2(order_info));
+    task::spawn(postgresql::insert_order2(order_info));
 
     unsafe {
         let mut price_gap = 0.0;
@@ -118,7 +118,7 @@ fn update_available_orders(
     flush::push_add_book(book);
 }
 
-pub fn matched(mut taker_order: OrderInfo) {
+pub fn matched(mut taker_order: postgresql::OrderInfo) {
     unsafe {
         // info!("start match_order = {:?}---opponents_available_orders={:?}", taker_order, crate::available_buy_orders);
     }
@@ -193,7 +193,7 @@ pub fn matched(mut taker_order: OrderInfo) {
     }
 }
 
-pub fn generate_trade(taker_order: &OrderInfo, maker_order: &EngineOrder, matched_amount: f64) {
+pub fn generate_trade(taker_order: &postgresql::OrderInfo, maker_order: &postgresql::EngineOrder, matched_amount: f64) {
     let taker_order2 = taker_order.clone();
     let maker_order2 = maker_order.clone();
 

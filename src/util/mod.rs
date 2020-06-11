@@ -1,4 +1,4 @@
-use crate::models::{OrderInfo, TradeInfo};
+use crate::models::postgresql::{OrderInfo, TradeInfo};
 use chrono::offset::LocalResult;
 use chrono::prelude::*;
 use num::ToPrimitive;

@@ -2,9 +2,9 @@ mod consume;
 mod models;
 mod util;
 
-extern crate env_logger;
-extern crate kafka;
-extern crate rustc_serialize;
+//extern crate env_logger;
+// extern crate kafka;
+//extern crate rustc_serialize;
 
 use kafka::consumer::{Consumer, FetchOffset, GroupOffsetStorage};
 use kafka::error::Error as KafkaError;
@@ -24,7 +24,7 @@ extern crate log;
 use log::Level;
 use log::LevelFilter;
 
-use crate::models::get_max_transaction_id;
+use crate::models::{postgresql};
 use crate::util::get_current_time;
 use chrono::prelude::*;
 use kafka::producer::{Producer, Record, RequiredAcks};
@@ -36,8 +36,8 @@ use std::sync::mpsc::channel;
 use std::time::Duration;
 use std::time::Instant;
 
-static mut available_buy_orders: Vec<models::EngineOrder> = Vec::new();
-static mut available_sell_orders: Vec<models::EngineOrder> = Vec::new();
+static mut available_buy_orders: Vec<postgresql::EngineOrder> = Vec::new();
+static mut available_sell_orders: Vec<postgresql::EngineOrder> = Vec::new();
 static mut trades: Vec<consume::engine::EngineTrade> = Vec::new();
 static mut market_id: String = String::new();
 static kafka_server: &str = "localhost:9092";
@@ -141,13 +141,13 @@ fn producer_init() -> Result<BaseProducer, KafkaError> {
 fn init(market: &str) {
     unsafe {
         info!("start loading data at {}", get_current_time());
-        available_buy_orders = models::list_available_orders("buy", market);
+        available_buy_orders = postgresql::list_available_orders("buy", market);
         info!(
             "finished loading {} buy data at {}",
             available_buy_orders.len(),
             get_current_time()
         );
-        available_sell_orders = models::list_available_orders("sell", market);
+        available_sell_orders = postgresql::list_available_orders("sell", market);
         info!(
             "finished loading {} sell data at {}",
             available_sell_orders.len(),

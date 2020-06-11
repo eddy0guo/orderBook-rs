@@ -1,5 +1,5 @@
 use super::engine::EngineTrade;
-use crate::models::*;
+use crate::models::{postgresql};
 use crate::util::*;
 use kafka::producer::{Producer, Record, RequiredAcks};
 use std::cmp::Ord;
@@ -47,7 +47,7 @@ struct marketLastTrades {
 }
 
 //  "pending","partial_filled","cancled","full_filled" or ""
-pub async fn update_maker(order: &mut UpdateOrder, engine_trade: &EngineTrade) -> bool {
+pub async fn update_maker(order: &mut postgresql::UpdateOrder, engine_trade: &EngineTrade) -> bool {
     // todo:更新redis余额
     order.available_amount = (order.available_amount - engine_trade.amount).to_fix(4);
     order.pending_amount = (order.pending_amount + engine_trade.amount).to_fix(4);
@@ -59,7 +59,7 @@ pub async fn update_maker(order: &mut UpdateOrder, engine_trade: &EngineTrade) -
     } else {
         info!("Other circumstances that were not considered, or should not have occurred");
     }
-    crate::models::update_order2(order.clone()).await;
+    postgresql::update_order2(order.clone()).await;
     true
 }
 /***
@@ -82,14 +82,14 @@ pub fn insert_taker(taker_order: &mut OrderInfo, engine_trade: &EngineTrade) -> 
 ***/
 pub fn generate_trade(
     taker: &str,
-    maker_order: &UpdateOrder,
+    maker_order: &postgresql::UpdateOrder,
     engine_trade: &EngineTrade,
     transaction_id: i32,
 ) -> Vec<String> {
     // todo:更新redis余额
     //fixme::默认值设计
     unsafe {
-        let mut trade = TradeInfo {
+        let mut trade = postgresql::TradeInfo {
             id: "".to_string(),
             transaction_id,
             transaction_hash: "".to_string(),

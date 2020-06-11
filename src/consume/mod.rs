@@ -6,7 +6,7 @@ extern crate kafka;
 use std::cmp::Ord;
 use std::collections::BTreeMap;
 
-use super::models::*;
+use super::models::{postgresql};
 use super::util::*;
 use chrono::offset::LocalResult;
 use chrono::prelude::*;
@@ -59,8 +59,8 @@ pub fn engine_start() {
             for m in ms.messages() {
                 let mut message = String::new();
                 let message = String::from_utf8_lossy(m.value);
-                let mut decoded_message: EngineOrder = Default::default();
-                let mut decoded_order: OrderInfo = Default::default();
+                let mut decoded_message: postgresql::EngineOrder = Default::default();
+                let mut decoded_order: postgresql::OrderInfo = Default::default();
                 decoded_order = json::decode(&message).unwrap_or_else(|err| {
                     error!("decode message error {:?}", err);
                     decoded_order
@@ -118,9 +118,8 @@ pub fn flush_start() {
                 let mut index_add = 0;
                 for trade in pending_trades {
                     index_add = index2 / 10;
-                    //let mut taker_order = crate::models::get_order(&trade.taker_order_id);
                     info!("[FLUSH]: maker_order1={:?}", trade.maker_order_id);
-                    let mut maker_order = crate::models::get_order(&trade.maker_order_id);
+                    let mut maker_order = postgresql::get_order(&trade.maker_order_id);
                     info!("[FLUSH]: maker_order2={:?}", trade.maker_order_id);
                     //info!("[FLUSH]: takerorder={:?},maker_order={:?}", taker_order, maker_order);
                     //可以异步
@@ -138,9 +137,9 @@ pub fn flush_start() {
 
                 //todo：关于laucher的队列的定序可以放到最后再确定
                 info!("[FLUSH]:get_max_transaction_id--111");
-                let mut current_transaction_id = crate::models::get_max_transaction_id();
+                let mut current_transaction_id = postgresql::get_max_transaction_id();
                 info!("[FLUSH]:get_max_transaction_id-22- ");
-                let mut matched_num = crate::models::count_matched_trades();
+                let mut matched_num = postgresql::count_matched_trades();
                 info!("[FLUSH]:count_matched_trades");
                 let mut matched_trade_batch = 1;
                 if (matched_num != 0) {
@@ -155,7 +154,7 @@ pub fn flush_start() {
                     info!("trade_arr3333------{:?}-\n\n\n", transaction_id);
                     trade_arr[1] = transaction_id.to_string();
                 }
-                insert_trade2(&mut trades_arr);
+                postgresql::insert_trade2(&mut trades_arr);
                 info!("[FLUSH]:insert trades22_arr {:?}", trades_arr);
                 continue;
             }
