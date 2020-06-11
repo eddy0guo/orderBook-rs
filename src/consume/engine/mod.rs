@@ -1,5 +1,5 @@
 use crate::models::*;
-use crate::util::MathOperation;
+use crate::util::*;
 use crate::consume::flush;
 use kafka::producer::{Producer, Record, RequiredAcks};
 use log::__private_api_enabled;
@@ -30,12 +30,62 @@ pub struct EngineTrade {
     pub taker: String,
 }
 
-fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_order: EngineOrder) {
+pub fn cancel_order(order_info: &OrderInfo){
+    let mut  book = flush::AddBook{
+        asks: Vec::new(),
+        bids: Vec::new(),
+    };
+    let mut order = UpdateOrder{
+        id: order_info.id.clone(),
+        trader_address: order_info.trader_address.clone(),
+        status: order_info.status.clone(),
+        amount: order_info.amount,
+        available_amount: order_info.available_amount,
+        confirmed_amount: order_info.confirmed_amount,
+        canceled_amount: order_info.canceled_amount,
+        pending_amount: order_info.pending_amount,
+        updated_at: get_current_time(),
+    };
+    let mut partner_available_orders = &mut Default::default();
+    unsafe {
+        if order_info.side == "buy" {
+            partner_available_orders = &mut crate::available_sell_orders;
+            book.bids.push([order_info.price, -order.amount]);
+        }else {
+            partner_available_orders = &mut crate::available_buy_orders;
+            book.asks.push([order_info.price, -order.amount]);
+        }
+        //撮合数组减掉相应
+        partner_available_orders.retain(|x| x.id != order.id);
+        //增量推送页减去
+        flush::push_add_book(book);
+        //取消订单异步落表
+        order.available_amount = 0.0;
+        //fixme 这里临时为了适配老的逻辑，先这样后边改为canceled_amount
+        order.canceled_amount = order.amount;
+        order.updated_at = get_current_time();
+        order.status = "cancled".to_string();
+        info!("update canceled order {:#?}",order);
+        task::spawn(update_order2(order));
+    }
+}
+
+fn update_available_orders(partner_available_orders: &mut Vec<EngineOrder>, taker_order: OrderInfo) {
+    let new_order = EngineOrder {
+        id: taker_order.id.clone(),
+        price: taker_order.price,
+        amount: taker_order.amount,
+        side: taker_order.side.clone(),
+        created_at: taker_order.created_at.clone(),
+    };
     let mut index = 0;
     let mut  book = flush::AddBook{
         asks: Vec::new(),
         bids: Vec::new(),
     };
+    let order_info = crate::util::struct2array(&taker_order);
+    task::spawn(insert_order2(order_info));
+
     unsafe {
         let mut price_gap = 0.0;
         if partner_available_orders.len() == 0 {
@@ -43,34 +93,11 @@ fn add_available_orders(partner_available_orders: &mut Vec<EngineOrder>, new_ord
             //info!("add_available_orders 2222= {:?}", partner_available_orders);
             return;
         }
-        // info!("add_available_orders333 = {:?}", partner_available_orders);
         if new_order.side == "buy" {
-            let mut priceExsit = false;
-            for bid in book.bids.iter_mut() {
-                if (new_order.price == bid[0]) {
-                    bid[1] = bid[1] + new_order.amount;
-                    priceExsit = true;
-                    break;
-                }
-            }
-            if !priceExsit {
-                book.bids.push([new_order.price, new_order.amount]);
-            }
-
+            book.bids.push([new_order.price, new_order.amount]);
             price_gap = (new_order.price - partner_available_orders[index].price).to_fix(4);
         } else {
-            let mut priceExsit = false;
-            for ask in book.asks.iter_mut() {
-                if (new_order.price == ask[0]) {
-                    ask[1] = ask[1] + new_order.amount;
-                    priceExsit = true;
-                    break;
-                }
-            }
-            if !priceExsit {
-                book.asks.push([new_order.price, new_order.amount]);
-            }
-
+            book.asks.push([new_order.price, new_order.amount]);
             price_gap = (partner_available_orders[index].price - new_order.price).to_fix(4);
         }
         loop {
@@ -118,16 +145,7 @@ pub fn matched(mut taker_order: OrderInfo) {
             }
 
             if opponents_available_orders.len() == 0 {
-                let order_info = crate::util::struct2array(&taker_order);
-                insert_order2(order_info);
-                let taker_order2 = EngineOrder {
-                    id: taker_order.id,
-                    price: taker_order.price,
-                    amount: taker_order.amount,
-                    side: taker_order.side,
-                    created_at: taker_order.created_at,
-                };
-                add_available_orders(partner_available_orders, taker_order2);
+                update_available_orders(partner_available_orders, taker_order.clone());
                 return;
             }
 
@@ -168,18 +186,8 @@ pub fn matched(mut taker_order: OrderInfo) {
             info!("unknown case")
         }
 
-        let order_info = crate::util::struct2array(&taker_order);
-        //let insert_order_future = insert_order2(&mut order_info);
-        task::spawn(insert_order2(order_info));
         if taker_order.available_amount > 0.0 {
-            let taker_order2 = EngineOrder {
-                id: taker_order.id.clone(),
-                price: taker_order.price,
-                amount: taker_order.available_amount,
-                side: taker_order.side.clone(),
-                created_at: taker_order.created_at.clone(),
-            };
-            add_available_orders(partner_available_orders, taker_order2);
+            update_available_orders(partner_available_orders, taker_order.clone());
         }
     }
 }

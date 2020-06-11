@@ -62,12 +62,22 @@ pub fn engine_start() {
                 let mut decoded_message: EngineOrder = Default::default();
                 let mut decoded_order: OrderInfo = Default::default();
                 decoded_order = json::decode(&message).unwrap_or_else(|err| {
-                    info!("decode message error {:?}", err);
+                    error!("decode message error {:?}", err);
                     decoded_order
                 });
                 info!("start engine at {}", crate::get_current_time());
                 decoded_order.price = decoded_order.price.to_fix(4);
                 decoded_order.amount = decoded_order.amount.to_fix(4);
+                decoded_order.available_amount = decoded_order.available_amount.to_fix(4);
+                decoded_order.confirmed_amount = decoded_order.confirmed_amount.to_fix(4);
+                decoded_order.pending_amount = decoded_order.pending_amount.to_fix(4);
+                decoded_order.canceled_amount = decoded_order.canceled_amount.to_fix(4);
+
+                if decoded_order.status == "cancled".to_string() {
+                    engine::cancel_order(&decoded_order);
+                    continue;
+                }
+
                 // todo:checkout available amount
                 engine::matched(decoded_order);
                 info!("finished engine at {}", crate::get_current_time());

@@ -7,7 +7,7 @@ use rustc_serialize::json;
 use serde::Deserialize;
 use std::ops::Mul;
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Default, Clone)]
 pub struct UpdateOrder {
     pub id: String,
     pub trader_address: String,
@@ -56,7 +56,7 @@ pub struct OrderInfo {
     pub price: f64,
     pub amount: f64,
     pub status: String,
-    //r#
+    //r#原生标识操作符
     pub r#type: String,
     pub available_amount: f64,
     pub confirmed_amount: f64,
@@ -175,7 +175,6 @@ pub  async fn insert_order2(trades: Vec<String>) {
     let mut trades_vec = trades;
     info!("start---------------------");
     insert_order(&mut trades_vec, crate::WRITE_ORDER_TABLE);
-    info!("start2---------------------");
     insert_order(&mut trades_vec, crate::WRITE_ORDER_TMP_TABLE);
     info!("end---------------------");
 }
@@ -204,14 +203,23 @@ pub fn insert_order(order_info: &mut Vec<String>, trade_table: &str) {
     let rows = result.unwrap();
 }
 
-pub fn update_order(order: &UpdateOrder) {
+pub  async fn update_order2(order: UpdateOrder) {
+    info!("start---------------------");
+    update_order(&order, crate::WRITE_ORDER_TABLE);
+    update_order(&order, crate::WRITE_ORDER_TMP_TABLE);
+    info!("end---------------------");
+}
+
+//这里也要更新canceled状态的，要兼容
+pub fn update_order(order: &UpdateOrder,trade_table: &str) {
     // fixme:注入的写法暂时有问题，先直接拼接
     let sql = format!(
         "UPDATE {} SET (available_amount,confirmed_amount,\
          canceled_amount,pending_amount,status,updated_at)=\
-         ({},confirmed_amount,canceled_amount,{},'{}','{}') WHERE id='{}'",
-        crate::WRITE_ORDER_TABLE,
+         ({},confirmed_amount,{},{},'{}','{}') WHERE id='{}'",
+        trade_table,
         order.available_amount,
+        order.canceled_amount,
         order.pending_amount,
         order.status,
         order.updated_at,
